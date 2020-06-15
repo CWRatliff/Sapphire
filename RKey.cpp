@@ -5,7 +5,7 @@
 #include "RField.h"
 #include <string.h>
 #include "RKey.hpp" 
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "utility.h"
 #include "dbdef.h"
 
@@ -101,7 +101,7 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 	for (rc = 0; rc == 0;) {
 		idb = *ikey++;								// get next descriptor
 		tdb = *tkey++;
-		if (idb == 0 && tdb == 0)
+		if ((idb == 0) && (tdb == 0))
 			return (0);
 		if (tdb == 0)
 			return (2);
@@ -112,9 +112,12 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 		if (idb & STRING) {
 			ilen = strlen(ikey);
 			tlen = strlen(tkey);
-			len = __min(ilen, tlen);
+//			len = _min(ilen, tlen); // MSVS
+			len = ilen;
+			if (tlen < ilen)
+				len = tlen;
 			if (idb & MSKNOCASE || tdb & MSKNOCASE)
-				rc = _strnicmp(ikey, tkey, len);
+				rc = strncasecmp(ikey, tkey, len);
 			else
 				rc = memcmp(ikey, tkey, len);
 			if (rc == 0) {
@@ -142,12 +145,12 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 			idp = tdp = 0;
 			ilen = sizeof(double);
 			tlen = sizeof(double);
-			ifp = (float)*((double*)ikey);
-			tfp = (float)*((double*)tkey);
+			idp = *((double*)ikey);
+			tdp = *((double*)tkey);
 			rc = 0;
-			if (ifp < tfp)
+			if (idp < tdp)
 				rc = -1;
-			else if (ifp > tfp)
+			else if (idp > tdp)
 				rc = 1;
 			}
 		else if ((idb & MSKASC)  == INT) {
@@ -247,7 +250,7 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 				if (len > 63) {
 					return (-1);				// error, too long
 					}
-				if (type = 's')
+				if (type == 's')
 					*key = STRING;
 				else if (type == 'u')
 					*key = STRING | MSKNOCASE;
@@ -255,7 +258,8 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 					*key = STRNUMERIC;
 				}
 			else if (type == 'f') {				// float
-				idata = (int)va_arg(arg, float);
+//				idata = (int)va_arg(arg, float); //unix no likey
+				idata = (int)va_arg(arg, double);
 				data = (char *)&idata;
 				len = sizeof(float);
 				*key = FP;

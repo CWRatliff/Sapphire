@@ -31,7 +31,7 @@ int MakeSearchKey(char* key, const char *tmplte, ...) {
 			if (len > 63) {
 				return (-1);				// error, too long
 				}
-			if (type = 's')
+			if (type == 's')
 				*key = STRING;
 			else if (type == 'u')
 				*key = STRNOCASE;
@@ -39,7 +39,8 @@ int MakeSearchKey(char* key, const char *tmplte, ...) {
 				*key = STRNUMERIC;
 			}
 		else if (type == 'f') {				// floating point
-			idata = (int)va_arg(arg, float);
+//			idata = (int)va_arg(arg, float);
+			idata = (int)va_arg(arg, double);
 			data = (char *)&idata;
 			len = sizeof(float);
 			*key = FP;

@@ -9,7 +9,7 @@
 #include "RKey.hpp"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"

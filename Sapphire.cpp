@@ -8,7 +8,7 @@
 #include "RField.h"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RPage.hpp"
 #include "RNode.hpp"
 #include "RBtree.hpp"
@@ -17,7 +17,7 @@
 #include "RDbf.h"
 #include "RSapphire.h"
 
-	errno_t	err;			
+//	errno_t	err;			
 
 Sapphire::Sapphire() {
 	dbDbfRoot = NULL;
@@ -152,7 +152,8 @@ RDbf*	Sapphire::DbCreateFile(const char *dbfname) {
 
 	dbf = new RDbf(dbfname);
 	rc = dbf->Create(dbfname);
-	if (rc == NULL) {
+//	if (rc == NULL) {
+	if (rc == 0) {
 		delete dbf;
 		return (NULL);
 	}
@@ -165,5 +166,5 @@ RDbf*	Sapphire::DbCreateFile(const char *dbfname) {
 //==============================================================================
 // return system error number "errno"
 int Sapphire::DbGetErrno() {
-	return err;
+	return errno;
 	}

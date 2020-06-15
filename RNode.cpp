@@ -5,17 +5,19 @@
 // 180612 - DeleteNode & NewNode reuse free nodes
 #include <string.h>
 #include <stdio.h>
-#include <io.h>
+//#include <io.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <errno.h>
 #include <assert.h>
 #include "RField.h"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RPage.hpp"
 #include "RData.hpp"
 #include "RNode.hpp"
 
-extern	errno_t	err;
+//extern	errno_t	err;
 
 /* Symbolic index node format
 	+----+----+----+----+----+-------+----+----+
@@ -139,19 +141,18 @@ int RNode::DeleteNode() {
 	nodeLeftSibling = nodeAvail;
 	nodeRightSibling = nodeAvail;
 
-	_set_errno(0);
-	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
-	_get_errno(&err);
+//	_set_errno(0);
+//	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
+//	_get_errno(&err);
+	errno = 0;
+	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
 	assert(errno == 0);
-	_write(nodeFd, &nodeP0, 3 * sizeof(NODE));
-	_get_errno(&err);
+	write(nodeFd, &nodeP0, 3 * sizeof(NODE));
 	assert(errno == 0);
 	nodeAvail = nodeCurr;
-	_lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
-	_get_errno(&err);
+	lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
 	assert(errno == 0);
-	_write(nodeFd, &nodeCurr, sizeof(NODE));
-	_get_errno(&err);
+	write(nodeFd, &nodeCurr, sizeof(NODE));
 	assert(errno == 0);
 
 	return 0;
@@ -262,29 +263,23 @@ NODE RNode::NewNode() {
 	int		rawpos;
 	NODE	avail;
 
-	_set_errno(0);
+	errno = 0;
 	if (nodeAvail) {								// if allocated free space is available
-		_lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
-		_get_errno(&err);
+		lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
 		assert(errno == 0);
-		_read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
-		_get_errno(&err);
+		read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
 		assert(errno == 0);
-		_lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
-		_get_errno(&err);
+		lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
 		assert(errno == 0);
-		_write(nodeFd, &avail, sizeof(NODE));
-		_get_errno(&err);
+		write(nodeFd, &avail, sizeof(NODE));
 		assert(errno == 0);
 		nodeCurr = nodeAvail;
 		nodeAvail = avail;
 	}
 	else {
-		rawpos = _lseek(nodeFd, 0L, SEEK_END);		// EOF
-		_get_errno(&err);
+		rawpos = lseek(nodeFd, 0L, SEEK_END);		// EOF
 		assert(errno == 0);
-		_write(nodeFd, &nodeP0, NODESIZE);
-		_get_errno(&err);
+		write(nodeFd, &nodeP0, NODESIZE);
 		assert(errno == 0);
 		nodeCurr = rawpos / NODESIZE;				// compute node number
 		}
@@ -303,7 +298,7 @@ int RNode::NextKey(int keyno) {
 NODE RNode::NextNode() {
 	NODE nnNext;
 
-	if (nnNext = nodeRightSibling) {
+	if ((nnNext = nodeRightSibling)) {
 		Read(nodeRightSibling);
 		return nnNext;
 		}
@@ -319,7 +314,7 @@ int RNode::PrevKey(int keyno) {
 NODE RNode::PrevNode() {
 	NODE nnPrev;
 
-	if (nnPrev = nodeLeftSibling) {
+	if ((nnPrev = nodeLeftSibling)) {
 		Read(nodeLeftSibling);
 		return nnPrev;
 		}
@@ -481,12 +476,10 @@ int RNode::Read(NODE node) {
 
 	if (nodeCurr == node)
 		return 1;
-	_set_errno(0);
-	_lseek(nodeFd, node*NODESIZE, SEEK_SET);
-	_get_errno(&err);
+	errno = 0;
+	lseek(nodeFd, node*NODESIZE, SEEK_SET);
 	assert(errno == 0);
-	bytes = _read(nodeFd, &nodeP0, NODESIZE);
-	_get_errno(&err);
+	bytes = read(nodeFd, &nodeP0, NODESIZE);
 	assert(errno == 0);
 	if (bytes < NODESIZE)
 		return 0;
@@ -497,12 +490,10 @@ int RNode::Read(NODE node) {
 //==================================================================
 // Write a node object onto disk
 int RNode::Write() {
-	_set_errno(0);
-	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
-	_get_errno(&err);
+	errno = 0;
+	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
 	assert(errno == 0);
-	_write(nodeFd, &nodeP0, NODESIZE);
-	_get_errno(&err);
+	write(nodeFd, &nodeP0, NODESIZE);
 	assert(errno == 0);
 	return 0;
 	}

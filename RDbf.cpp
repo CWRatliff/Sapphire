@@ -1,26 +1,28 @@
 // 180302 windows/dos errno put into create
 // 180304 closer delete of dbfname to errno()
 
+#include <unistd.h>
 #include <stdio.h>
-#include <io.h>
+//#include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string.h>
+#include <strings.h>
 #include <errno.h>
 #include "dbdef.h"
 #include "RField.h"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RPage.hpp"
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
 #include "RTable.h"
 #include "RDbf.h"
-#include "ndbdefs.h"
+//#include "ndbdefs.h"
 
-extern	errno_t	err;
+//extern	errno_t	err;
 
 //=============================================================================
 RDbf::RDbf(const char* dbfname) {
@@ -41,7 +43,7 @@ RDbf::~RDbf() {
 		delete rel;
 		}
 	if (dbfFd > 0)
-		_close(dbfFd);
+		close(dbfFd);
 	delete [] dbfName;
 	if (dbfBtree)
 		delete dbfBtree;
@@ -53,6 +55,7 @@ RDbf::~RDbf() {
 int	RDbf::Create(const char *dbfname) {
 	char	zeros[NODESIZE];
 	int		len;
+	int		err;
 	char*	dosname;
 
 	len = strlen(dbfname);
@@ -61,14 +64,17 @@ int	RDbf::Create(const char *dbfname) {
 	if (strstr(dosname, ".dbf") == 0)
 		strcat(dosname, ".dbf");
 	memset(zeros, 0, NODESIZE);
-	_set_errno(0);
-	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
-	_get_errno(&err);
+//	_set_errno(0);
+//	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
+//	_get_errno(&err);
+	errno = 0;
+	dbfFd = open(dosname, O_RDWR | O_CREAT);
+	err = errno;
 	delete [] dosname;
 	if (err > 0)
 		return 0;
 	if (dbfFd) {
-		_write(dbfFd, zeros, NODESIZE);
+		write(dbfFd, zeros, NODESIZE);
 		dbfAvail = 0;
 		dbfBtree = new RBtree(dbfFd, dbfAvail);
 		return dbfFd;
@@ -79,6 +85,7 @@ int	RDbf::Create(const char *dbfname) {
 // return dos file number if AOK, else NULL (errno is set)
 int RDbf::Login(const char* dbfname) {
 	int		len;
+	int		err;
 	char*	dosname;
 
 	len = strlen(dbfname);
@@ -86,15 +93,18 @@ int RDbf::Login(const char* dbfname) {
 	strcpy(dosname, dbfname);
 	if (strstr(dosname, ".dbf") == 0)
 		strcat(dosname, ".dbf");
-	_set_errno(0);
-	dbfFd = _open(dosname, _O_BINARY | _O_RDWR);
-	_get_errno(&err);
+//	_set_errno(0);
+//	dbfFd = _open(dosname, _O_BINARY | _O_RDWR);
+//	_get_errno(&err);
+	errno = 0;
+	dbfFd = open(dosname, O_RDWR);
+	err = errno;
 	delete[] dosname;
 	if (err > 0)
 		return 0;
 	if (dbfFd) {
-		_lseek(dbfFd, 0L, SEEK_SET);
-		_read(dbfFd, &dbfAvail, sizeof(NODE));
+		lseek(dbfFd, 0L, SEEK_SET);
+		read(dbfFd, &dbfAvail, sizeof(NODE));
 		dbfBtree = new RBtree(dbfFd, dbfAvail);
 		}
 	return dbfFd;
@@ -220,7 +230,7 @@ int RDbf::DbDeleteTable(const char* relname) {
 
 	// sweep thru linked list of rel's to make sure relation isn't open
 	for (relp = dbfRelRoot; relp; relp = relp->GetLink()) {
-		if (_stricmp(relname, relp->GetRelname()) == 0)
+		if (strcasecmp(relname, relp->GetRelname()) == 0)
 			return (-1);
 		}
 	rc = dbfRelRoot->DropRelation(dbfBtree, relname);

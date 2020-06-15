@@ -1,7 +1,7 @@
 #include <string.h>
 #include "RField.h"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "dbdef.h"
 
 //=============================================================================

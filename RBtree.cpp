@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "RField.h"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RPage.hpp"
 #include "RData.hpp"
 #include "RNode.hpp"
@@ -228,7 +228,7 @@ void RBtree::PrintTree() {
 	NODE	leftNode[10];
 	
 	printf("\nTree printout of index # ");
-	printf("Root = %d\n", ROOT);
+	printf("Root = %ld\n", ROOT);
 //	btWork->Read(ROOT);
 	btNode = btRoot;
 	btNode->PrintNode();

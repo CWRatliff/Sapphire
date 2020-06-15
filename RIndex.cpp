@@ -3,12 +3,12 @@
 #include "RField.h"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RPage.hpp"
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
-#include "ndbdefs.h"
+//#include "ndbdefs.h"
 #include "utility.h"
 
 // Index record layout
