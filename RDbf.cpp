@@ -68,7 +68,7 @@ int	RDbf::Create(const char *dbfname) {
 //	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
 //	_get_errno(&err);
 	errno = 0;
-	dbfFd = open(dosname, O_RDWR | O_CREAT);
+	dbfFd = open(dosname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	err = errno;
 	delete [] dosname;
 	if (err > 0)
@@ -97,7 +97,7 @@ int RDbf::Login(const char* dbfname) {
 //	dbfFd = _open(dosname, _O_BINARY | _O_RDWR);
 //	_get_errno(&err);
 	errno = 0;
-	dbfFd = open(dosname, O_RDWR);
+	dbfFd = open(dosname, O_RDWR, S_IRUSR | S_IWUSR);
 	err = errno;
 	delete[] dosname;
 	if (err > 0)
