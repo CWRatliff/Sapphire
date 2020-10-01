@@ -1,9 +1,4 @@
-// 180323
-
-typedef	void*	dbfID;
-typedef	void*	relID;
-typedef	void*	ndxID;
-//typedef	int		fldID;
+#pragma once
 
 // data types / index descriptors
 
@@ -25,105 +20,102 @@ int MakeSearchKey(char* key, const char *tmplte, ...);
 
 class RField {
 
-	private:
-		char*	fldName;
-		char*	fldData;		// data item
-		int		fldType;		// ref ndbdefs.h
-		int		fldLen;			// max fld length
-		int		fldChg;			// change status TRUE/FALSE
-		int		fldOwner;		// data area owned by object -> TRUE
+private:
+	char*	fldName;
+	char*	fldData;		// data item
+	int		fldType;		// ref ndbdefs.h
+	int		fldLen;			// max fld length
+	int		fldChg;			// change status TRUE/FALSE
+	int		fldOwner;		// data area owned by object -> TRUE
 
-	public:
-		RField();
-		RField(const char* fldname, char* flddata, int fldtype, int fldlen);
-		RField(const char* fldname, int fldtype, int fldlen);
-		RField(const char* fldname, int fldtype);
-		~RField();
-/*
-		int		ClearField();
-		char*	GetFieldName() {return (fldName);}
-		int		GetFieldLen() {return (fldLen);}
-		int		GetFieldType() {return (fldType);}
-		char*	GetFieldData() {return (fldData);}
-		int		GetFieldStatus() {return (fldChg);}
-		int		GetFieldDataInt();
-		int		SetFieldData(const char *data);
-		int		SetFieldData(int data);
-		int		SetFieldData(float data);
-		int		SetFieldData(double data);
-		void	ClearFieldStatus() {fldChg = 0;}
-		*/
-	};
-class RFieldC : public RField {
 public:
-	const char*	Data();
+	RField();
+	RField(const char* fldname, char* flddata, int fldtype, int fldlen);
+	RField(const char* fldname, int fldtype, int fldlen);
+	RField(const char* fldname, int fldtype);
+	~RField();
+
+	const char*	GetChar();
+	int			GetInt();
+	float		GetFloat();
+	double		GetDouble();
+
+	int			SetData(const char *data);
+	int			SetData(int data);
+	int			SetData(float data);
+	int			SetData(double data);
+	int			ClearField();
+
+	char*		GetName() { return (fldName); }
+	int			GetLen() { return (fldLen); }
+	int			GetType() { return (fldType); }
+	char*		GetDataAddr() { return (fldData); }
 };
-class RFieldI : public RField {
+
+class RIndex {
+};
+
+class RTable {
+
 public:
-	int		Data();
+	int		DbAddRecord();
+	int		DbClearRecord();
+	int		DbDeleteRecord();
+	int		DbRefreshRecord();
+	int		DbUpdateRecord();
+
+	int		DbFirstRecord(RIndex* ndx);
+	int		DbLastRecord(RIndex* ndx);
+	int		DbNextRecord(RIndex* ndx);
+	int		DbPrevRecord(RIndex* ndx);
+	int		DbSearchRecord(RIndex* ndx, const char* key);
+
+	RIndex*	DbGetIndexObject(const char* ndxname);
+	RField*	DbGetFieldObject(const char* fldname, int offset = 0);
+
+	RIndex*	DbMakeIndex(const char* ndxname, const char *tmplte, RField* fldlst[]);
+
+	const char*	DbGetChar(const char* fldname, int offset = 0);
+	int		DbGetInt(const char* fldname, int offset = 0);
+	float	DbGetFloat(const char* fldname, int offset = 0);
+	double	DbGetDouble(const char* fldname, int offset = 0);
+
+	int		DbGetField(const char* fldname, char* data, int offset = 0);
+	int		DbGetField(const char* fldname, int* data, int offset = 0);
+	int		DbGetField(const char* fldname, float* dat, int offset = 0);
+	int		DbGetField(const char* fldname, double* data, int offset = 0);
+
+	int		DbSetField(const char* fldname, const char* data, int offset = 0);
+	int		DbSetField(const char* fldname, int data, int offset = 0);
+	int		DbSetField(const char* fldname, float data, int offset = 0);
+	int		DbSetField(const char* fldname, double data, int offset = 0);
 };
-class RFieldF : public RField {
+
+class RDbf {
+
 public:
-	float	Data();
+	int		DbMakeTable(const char* tabname, RField* fldlst[]);
+	RTable*	DbOpenTable(const char* tabname);
+	int		DbCloseTable(RTable* rel);
+	int		DbDeleteTable(const char* relname);
+	void	PrintTree();
 };
-class RFieldD : public RField {
-public:
-	double	Data();
-};
+
 
 class Sapphire {
 
-	private:
-		dbfID	dbDbfRoot;		// dbf linked list root
 
-	public:
-		Sapphire();
-		~Sapphire();
+private:
+	void*	dbDbfRoot;		// dbf linked list root
 
-		dbfID	DbCreate(const char* dbfname);
-		dbfID	DbLogin(const char* dbfname);
-		int		DbLogout(dbfID dbf);
+public:
+	Sapphire();
+	~Sapphire();
 
-		int		DbDeleteRelation(dbfID dbf, const char* relname);
-		int		DbMakeRelation(dbfID dbf, const char* relname, RField* fldlst[]);
-		relID	DbOpenRelation(dbfID dbf, const char* relname);
-		int		DbCloseRelation(relID rel);
+	RDbf*	DbCreateFile(const char* dbfname);
+	RDbf*	DbLogin(const char* dbfname);
+	int		DbLogout(RDbf* dbfile);
 
-		int		DbDeleteIndex(relID rel, const char* ndxname);
-		ndxID	DbMakeIndex(relID rel, const char* ndxname, const char *tmplte, RField* fldlst[]);
-		ndxID	DbGetIndex(relID rel, const char* ndxname);
-
-		int		DbFirst(relID rel, ndxID ndx);	
-		int		DbLast(relID rel, ndxID ndx);
-		int		DbNext(relID rel, ndxID ndx);
-		int		DbPrev(relID rel, ndxID ndx);
-		int		DbSearch(relID rel, ndxID ndx, const char* key);
-
-		int		DbClearField(relID relid, const char* fldname, int offset = 0);
-
-		const char*	DbGetChar(relID relid, const char* fldname, int offset = 0);
-		int		DbGetInt(relID relid, const char* fldname, int offset = 0);
-		float	DbGetFloat(relID relid, const char* fldname, int offset = 0);
-		double	DbGetDouble(relID relid, const char* fldname, int offset = 0);
-
-		int		DbGetField(relID relid, const char* fldname, char* data, int offset = 0);
-		int		DbGetField(relID relid, const char* fldname, int* data, int offset = 0);
-		int		DbGetField(relID relid, const char* fldname, float* data, int offset = 0);
-		int		DbGetField(relID relid, const char* fldname, double* data, int offset = 0);
-
-		int		DbSetField(relID relid, const char* fldname, const char* data, int offset = 0);
-		int		DbSetField(relID relid, const char* fldname, int data, int offset = 0);
-		int		DbSetField(relID relid, const char* fldname, float data, int offset = 0);
-		int		DbSetField(relID relid, const char* fldname, double data, int offset = 0);
-
-
-		int		DbAddRecord(relID rel);
-		int		DbClearRecord(relID rel);
-		int		DbDeleteRecord(relID rel);
-		int		DbRefreshRecord(relID rel);
-		int		DbUpdateRecord(relID rel);
-
-		int		DbGetErrno();
-		void	PrintTree(relID rel);
-	};
+	int		DbGetErrno();
+};
 #endif
