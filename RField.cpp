@@ -1,7 +1,8 @@
+//210126 - user supplied char data longer than fldLen causes heap overrun
 #include <string.h>
 #include "RField.h"
 #include "RKey.hpp"
-#include "Ndbdefs.h"
+#include "ndbdefs.h"
 #include "dbdef.h"
 
 //=============================================================================
@@ -36,8 +37,8 @@ RField::RField(const char* fldname, int fldtype, int fldlen) {
 	else if (fldtype == DP)
 		fldLen = sizeof(double);
 	else
-		fldLen = fldlen;
-	fldData = new char[fldLen];
+		fldLen = fldlen + 1;
+	fldData = new char[fldLen+1];	//210127
 	fldChg = 0;
 	fldOwner = TRUE;		// data area owned by 'this'
 	}
@@ -55,8 +56,9 @@ RField::RField(const char* fldname, int fldtype) {
 	else if (fldtype == DP)
 		fldLen = sizeof(double);
 	else
+
 		fldLen = FLDMAX;
-	fldData = new char[fldLen];
+	fldData = new char[fldLen+1];	//210127
 	fldChg = 0;
 	fldOwner = TRUE;		// data area owned by 'this'
 	}
@@ -118,7 +120,10 @@ double RField::GetDouble() {
 int RField::SetData(const char *data) {
 	int	len;
 
-	strcpy(fldData, data);
+//	strcpy(fldData, data);           //210126
+	strncpy(fldData, data, fldLen);  //210126
+	fldData[fldLen] = 'f';
+	fldData[fldLen] = '\0';          //210126
 	len = strlen(data) + 1;
 	fldChg = TRUE;
 	return (len);
