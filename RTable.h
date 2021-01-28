@@ -42,7 +42,8 @@ class RTable {
 
 		RField*	DbGetFieldObject(const char* fldname, int offset = 0);
 
-		const char* DbGetChar(const char* fldname, int offset = 0);
+//		const char* DbGetChar(const char* fldname, int offset = 0);//210128
+		char*	DbGetChar(const char* fldname, int offset = 0);
 		int		DbGetInt(const char* fldname, int offset = 0);
 		float	DbGetFloat(const char* fldname, int offset = 0);
 		double	DbGetDouble(const char* fldname, int offset = 0);

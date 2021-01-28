@@ -35,11 +35,11 @@ public:
 	RField(const char* fldname, int fldtype);
 	~RField();
 
-	const char*	GetChar();
+	char*		GetChar();
 	int			GetInt();
 	float		GetFloat();
 	double		GetDouble();
-
+		
 	int			SetData(const char *data);
 	int			SetData(int data);
 	int			SetData(float data);
@@ -49,73 +49,70 @@ public:
 	char*		GetName() { return (fldName); }
 	int			GetLen() { return (fldLen); }
 	int			GetType() { return (fldType); }
-	char*		GetDataAddr() { return (fldData); }
-};
+	};
 
 class RIndex {
-};
+	};
 
 class RTable {
 
 public:
-	int		DbAddRecord();
-	int		DbClearRecord();
-	int		DbDeleteRecord();
-	int		DbRefreshRecord();
-	int		DbUpdateRecord();
+	int			DbAddRecord();
+	int			DbClearRecord();
+	int			DbDeleteRecord();
+	int			DbRefreshRecord();
+	int			DbUpdateRecord();
 
-	int		DbFirstRecord(RIndex* ndx);
-	int		DbLastRecord(RIndex* ndx);
-	int		DbNextRecord(RIndex* ndx);
-	int		DbPrevRecord(RIndex* ndx);
-	int		DbSearchRecord(RIndex* ndx, const char* key);
+	int			DbFirstRecord(RIndex* ndx);
+	int			DbLastRecord(RIndex* ndx);
+	int			DbNextRecord(RIndex* ndx);
+	int			DbPrevRecord(RIndex* ndx);
+	int			DbSearchRecord(RIndex* ndx, const char* key);
 
-	RIndex*	DbGetIndexObject(const char* ndxname);
-	RField*	DbGetFieldObject(const char* fldname, int offset = 0);
+	RIndex*		DbGetIndexObject(const char* ndxname);
+	RField*		DbGetFieldObject(const char* fldname, int offset = 0);
+	char*		DbGetChar(const char* fldname, int offset = 0);
+	int			DbGetInt(const char* fldname, int offset = 0);
+	float		DbGetFloat(const char* fldname, int offset = 0);
+	double		DbGetDouble(const char* fldname, int offset = 0);
+	int			DbSetField(const char* fldname, const char* data, int offset = 0);
+	int			DbSetField(const char* fldname, int data, int offset = 0);
+	int			DbSetField(const char* fldname, float data, int offset = 0);
+	int			DbSetField(const char* fldname, double data, int offset = 0);
 
-	RIndex*	DbMakeIndex(const char* ndxname, const char *tmplte, RField* fldlst[]);
 
-	const char*	DbGetChar(const char* fldname, int offset = 0);
-	int		DbGetInt(const char* fldname, int offset = 0);
-	float	DbGetFloat(const char* fldname, int offset = 0);
-	double	DbGetDouble(const char* fldname, int offset = 0);
-
-	int		DbGetField(const char* fldname, char* data, int offset = 0);
-	int		DbGetField(const char* fldname, int* data, int offset = 0);
-	int		DbGetField(const char* fldname, float* dat, int offset = 0);
-	int		DbGetField(const char* fldname, double* data, int offset = 0);
-
-	int		DbSetField(const char* fldname, const char* data, int offset = 0);
-	int		DbSetField(const char* fldname, int data, int offset = 0);
-	int		DbSetField(const char* fldname, float data, int offset = 0);
-	int		DbSetField(const char* fldname, double data, int offset = 0);
-};
+	RIndex*		DbMakeIndex(const char* ndxname, const char *tmplte, RField* fldlst[]);
+	// ***************** dba only
+	int			GetRecno();
+	// ************************
+	};
 
 class RDbf {
 
 public:
-	int		DbMakeTable(const char* tabname, RField* fldlst[]);
-	RTable*	DbOpenTable(const char* tabname);
-	int		DbCloseTable(RTable* rel);
-	int		DbDeleteTable(const char* relname);
-	void	PrintTree();
-};
+	int			DbMakeTable(const char* tabname, RField* fldlst[]);
+	RTable*		DbOpenTable(const char* tabname);
+	int			DbCloseTable(RTable* rel);
+	int			DbDeleteTable(const char* relname);
+
+	void		PrintTree();
+	};
 
 
 class Sapphire {
 
 
 private:
-	void*	dbDbfRoot;		// dbf linked list root
+	void*		dbDbfRoot;		// dbf linked list root
 
 public:
 	Sapphire();
 	~Sapphire();
 
-	RDbf*	DbCreateFile(const char* dbfname);
-	RDbf*	DbLogin(const char* dbfname);
-	int		DbLogout(RDbf* dbfile);
+	RDbf*		DbCreateFile(const char* dbfname);
+	RDbf*		DbLogin(const char* dbfname);
+	int			DbLogout(RDbf* dbfile);
 
-	int		DbGetErrno();
-};
+	int			DbGetErrno();
+	};
 #endif

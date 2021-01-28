@@ -2,7 +2,7 @@
 // 180214 - field type agreement checked in Fetch set (ret -2 on missmatch)
 // 180302 - offsets in Store set
 // 180328 - SearchRecord - rc from Find stepped on by Fetch
-// 200614 - <strings.h> added, _stricmp > strcasecmp MSVS -> Unix
+// 210128 - DbGetChar const char* changed to char*
 
 #include "dbdef.h"
 #include "RField.h"
@@ -10,14 +10,13 @@
 #include "RKey.hpp"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "Ndbdefs.h"
+#include "ndbdefs.h"
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
 #include "RTable.h"
 #include "utility.h"
 #include <string.h>
-#include <strings.h>
 #include <stdarg.h> 
 
 // sysrel
@@ -256,7 +255,7 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			return -1;					// 'relname'/'ndxname' non-exisient, bail out
-		rc = strcasecmp(fldndx2.GetName(), ndxname);
+		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0)
 			break;						// got it
 		rc = ndxndxx.Next();
@@ -285,7 +284,7 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			return -1;
-		rc = strcasecmp(fldndx2.GetName(), ndxname);
+		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0) {
 			ndxndxx.Delete();
 			ndxndx.Delete();
@@ -327,7 +326,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			break;
-		rc = strcasecmp(fldndx1.GetChar(), relname);
+		rc = _stricmp(fldndx1.GetChar(), relname);
 		if (rc == 0) {
 			ndxrecno = fldndx3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -348,7 +347,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	recno = ndxrelx.GetRecno();
 	rc = ndxrel.Fetch(recno, fldrellst);
 	if (rc >= 0) {
-		rc = strcasecmp(fldrel1.GetChar(), relname);
+		rc = _stricmp(fldrel1.GetChar(), relname);
 		if (rc == 0) {
 			ndxrecno = fldrel3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -366,7 +365,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxndxx.Find(keyw);
 	while (rc >= 0) {
 		ndxndxx.GetCurrentKey(&keyk);
-		rc = strcasecmp(keyk.GetKeyStr()+1, relname);
+		rc = _stricmp(keyk.GetKeyStr()+1, relname);
 		if (rc == 0) {
 			recno = ndxndxx.GetRecno();
 			ndxndx.Fetch(recno, fldndxlst); // field distribution not actually used
@@ -382,7 +381,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxatrx.Find(keyw);
 	while (rc >= 0) {
 		ndxatrx.GetCurrentKey(&keyk);
-		rc = strcasecmp(keyk.GetKeyStr()+1, relname);
+		rc = _stricmp(keyk.GetKeyStr()+1, relname);
 		if (rc == 0) {
 			recno = ndxatrx.GetRecno();
 			ndxatr.Fetch(recno, fldndxlst);
@@ -398,7 +397,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxrelx.Find(keyw);
 	while (rc >= 0) {
 		ndxrelx.GetCurrentKey(&keyk);
-		rc = strcasecmp(keyk.GetKeyStr()+1, relname);
+		rc = _stricmp(keyk.GetKeyStr()+1, relname);
 		if (rc == 0) {
 			recno = ndxrelx.GetRecno();
 			ndxrel.Fetch(recno, fldndxlst);
@@ -427,8 +426,9 @@ RField*	RTable::DbGetFieldObject(const char* fldname, int offset) {
 		}
 	return NULL;
 	}
-const char*	RTable::DbGetChar(const char* fldname, int offset) {
-	const char* p;
+
+char*	RTable::DbGetChar(const char* fldname, int offset) {
+	char* p;
 	RField *fld;
 
 	fld = DbGetFieldObject(fldname, offset);
@@ -607,7 +607,7 @@ RIndex* RTable::DbMakeIndex(const char* ndxname, const char *tmplte, RField* fld
 	while (rc >= 0) {					// search thru ndxndxx/ndxndx to find 'ndxname'
 		recno = ndxndxx.GetRecno();
 		ndxndx.Fetch(recno, fldndxlst);
-		rc = strcasecmp(fldndx2.GetName(), ndxname);
+		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0)
 			return NULL;					// duplicate found
 		rc = ndxndxx.Next();
@@ -888,7 +888,7 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 	for(;;) {
 		recno = ndxndxx.GetRecno();
 		rc = ndxndx.Fetch(recno, fldndxlst);
-		rc = strcasecmp(fldndx1.GetChar(), relname);
+		rc = _stricmp(fldndx1.GetChar(), relname);
 		if (rc != 0)
 			break;
 		strcpy(ascdesc, fldndx4.GetChar());
@@ -937,6 +937,30 @@ int	RTable::DbPrevRecord(RIndex* ndx) {
 	}
 
 //============================================================================
+/*
+DbSearchRecord - Search the current data relation index
+
+int	DbSearchRecord(relID relid, ndxID ndx, const char* key)
+
+Provides direct access to a record by its index key.  Search keys must
+be constructed by DbMakeSearchKey.
+
+return -1 if error
+0 if key found in index (possibly fewer components)
+1 if supplied key < index key
+
+Parameters
+relid - the handle to an open relation
+ndxid - index handle
+key - a user supplied character string containing a "search key" generally
+constructed vi the utility function MakeSearchKey q.v.
+
+Returns
+-1 - error
+
+See also
+MakeSearchKey
+*/
 //int RTable::DbSearchRecord(RIndex* ndx, RKey& key) {
 int RTable::DbSearchRecord(RIndex* ndx, const char* key) {
 	int		rc, rc2;

@@ -1,4 +1,6 @@
 //210126 - user supplied char data longer than fldLen causes heap overrun
+//210128 - GetChar const char* changed to char*
+
 #include <string.h>
 #include "RField.h"
 #include "RKey.hpp"
@@ -56,7 +58,6 @@ RField::RField(const char* fldname, int fldtype) {
 	else if (fldtype == DP)
 		fldLen = sizeof(double);
 	else
-
 		fldLen = FLDMAX;
 	fldData = new char[fldLen+1];	//210127
 	fldChg = 0;
@@ -86,8 +87,9 @@ int RField::ClearField() {
 	}
 //=============================================================================
 // fetch a char pointer to character type field data
-const char* RField::GetChar() {
-	const char* p;
+char* RField::GetChar() {
+//	const char* p;
+	char* p;
 
 	p = fldData;
 	return (p);

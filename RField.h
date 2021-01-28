@@ -26,7 +26,7 @@ class RField {
 		int		GetType() {return (fldType);}
 		char*	GetDataAddr() {return (fldData); }
 
-		const char* GetChar();
+		char*	GetChar();
 		int		GetInt();
 		float	GetFloat();
 		double	GetDouble();
@@ -69,8 +69,8 @@ class RFieldD : public RField {
 
 //=============================================================================
 // fetch a char pointer to character type field data
-const char* RFieldC::Get() {
-	const char* p;
+char* RFieldC::Get() {
+	char* p;
 
 	p = GetDataAddr();
 	return (p);
