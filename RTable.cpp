@@ -2,7 +2,6 @@
 // 180214 - field type agreement checked in Fetch set (ret -2 on missmatch)
 // 180302 - offsets in Store set
 // 180328 - SearchRecord - rc from Find stepped on by Fetch
-// 210128 - DbGetChar const char* changed to char*
 
 #define MSDOS
 //#define LINUX
@@ -299,7 +298,7 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 #ifdef LINUX
 		rc = strcasecmp(fldndx2.GetName(), ndxname);
 #endif
-		rc = _stricmp(fldndx2.GetName(), ndxname);
+//		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0) {
 			ndxndxx.Delete();
 			ndxndx.Delete();
@@ -436,7 +435,13 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxrelx.Find(keyw);
 	while (rc >= 0) {
 		ndxrelx.GetCurrentKey(&keyk);
+#ifdef MSDOS
 		rc = _stricmp(keyk.GetKeyStr()+1, relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(keyk.GetKeyStr() + 1, relname);
+#endif
+//		rc = _stricmp(keyk.GetKeyStr() + 1, relname);
 		if (rc == 0) {
 			recno = ndxrelx.GetRecno();
 			ndxrel.Fetch(recno, fldndxlst);
