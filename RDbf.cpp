@@ -1,8 +1,10 @@
 // 180302 windows/dos errno put into create
 // 180304 closer delete of dbfname to errno()
 
+#define MSDOS
+//#define LINIX
+
 #include <stdio.h>
-#include <io.h>
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <string.h>
@@ -18,9 +20,11 @@
 #include "RIndex.h"
 #include "RTable.h"
 #include "RDbf.h"
-#include "ndbdefs.h"
 
+#ifdef MSDOS
+#include <io.h>
 extern	errno_t	err;
+#endif
 
 //=============================================================================
 RDbf::RDbf(const char* dbfname) {
@@ -40,8 +44,14 @@ RDbf::~RDbf() {
 		nxtrel = rel->GetLink();
 		delete rel;
 		}
+#ifdef MSDOS
 	if (dbfFd > 0)
 		_close(dbfFd);
+#endif
+#ifdef LINIX
+	if (dbfFd > 0)
+		close(dbfFd);
+#endif
 	delete [] dbfName;
 	if (dbfBtree)
 		delete dbfBtree;
