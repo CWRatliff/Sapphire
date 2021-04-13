@@ -4,6 +4,9 @@
 // 180328 - SearchRecord - rc from Find stepped on by Fetch
 // 210128 - DbGetChar const char* changed to char*
 
+#define MSDOS
+//#define LINUX
+
 #include "dbdef.h"
 #include "RField.h"
 #include "RPage.hpp"
@@ -255,7 +258,13 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			return -1;					// 'relname'/'ndxname' non-exisient, bail out
+#ifdef MSDOS
 		rc = _stricmp(fldndx2.GetName(), ndxname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldndx2.GetName(), ndxname);
+#endif
+//		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0)
 			break;						// got it
 		rc = ndxndxx.Next();
@@ -284,6 +293,12 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			return -1;
+#ifdef MSDOS
+		rc = _stricmp(fldndx2.GetName(), ndxname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldndx2.GetName(), ndxname);
+#endif
 		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0) {
 			ndxndxx.Delete();
@@ -326,7 +341,13 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			break;
-		rc = _stricmp(fldndx1.GetChar(), relname);
+#ifdef MSDOS
+		rc = _stricmp(fldndx1.GetName(), relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldndx1.GetName(), relname);
+#endif
+//		rc = _stricmp(fldndx1.GetChar(), relname);
 		if (rc == 0) {
 			ndxrecno = fldndx3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -347,7 +368,13 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	recno = ndxrelx.GetRecno();
 	rc = ndxrel.Fetch(recno, fldrellst);
 	if (rc >= 0) {
+#ifdef MSDOS
 		rc = _stricmp(fldrel1.GetChar(), relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldrel1.GetName(), relname);
+#endif
+//		rc = _stricmp(fldrel1.GetChar(), relname);
 		if (rc == 0) {
 			ndxrecno = fldrel3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -365,7 +392,13 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxndxx.Find(keyw);
 	while (rc >= 0) {
 		ndxndxx.GetCurrentKey(&keyk);
-		rc = _stricmp(keyk.GetKeyStr()+1, relname);
+#ifdef MSDOS
+		rc = _stricmp(keyk.GetKeyStr() + 1, relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(keyk.GetKeyStr() + 1, relname);
+#endif
+//		rc = _stricmp(keyk.GetKeyStr()+1, relname);
 		if (rc == 0) {
 			recno = ndxndxx.GetRecno();
 			ndxndx.Fetch(recno, fldndxlst); // field distribution not actually used
@@ -381,7 +414,13 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	rc = ndxatrx.Find(keyw);
 	while (rc >= 0) {
 		ndxatrx.GetCurrentKey(&keyk);
-		rc = _stricmp(keyk.GetKeyStr()+1, relname);
+#ifdef MSDOS
+		rc = _stricmp(keyk.GetKeyStr() + 1, relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(keyk.GetKeyStr() + 1, relname);
+#endif
+//		rc = _stricmp(keyk.GetKeyStr()+1, relname);
 		if (rc == 0) {
 			recno = ndxatrx.GetRecno();
 			ndxatr.Fetch(recno, fldndxlst);
@@ -607,7 +646,13 @@ RIndex* RTable::DbMakeIndex(const char* ndxname, const char *tmplte, RField* fld
 	while (rc >= 0) {					// search thru ndxndxx/ndxndx to find 'ndxname'
 		recno = ndxndxx.GetRecno();
 		ndxndx.Fetch(recno, fldndxlst);
+#ifdef MSDOS
 		rc = _stricmp(fldndx2.GetName(), ndxname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldndx2.GetName(), ndxname);
+#endif
+//		rc = _stricmp(fldndx2.GetName(), ndxname);
 		if (rc == 0)
 			return NULL;					// duplicate found
 		rc = ndxndxx.Next();
@@ -888,7 +933,13 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 	for(;;) {
 		recno = ndxndxx.GetRecno();
 		rc = ndxndx.Fetch(recno, fldndxlst);
+#ifdef MSDOS
 		rc = _stricmp(fldndx1.GetChar(), relname);
+#endif
+#ifdef LINUX
+		rc = strcasecmp(fldndx1.GetChar(), relname);
+#endif
+//		rc = _stricmp(fldndx1.GetChar(), relname);
 		if (rc != 0)
 			break;
 		strcpy(ascdesc, fldndx4.GetChar());
