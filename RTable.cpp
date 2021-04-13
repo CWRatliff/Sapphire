@@ -10,7 +10,7 @@
 #include "RKey.hpp"
 #include "RData.hpp"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
@@ -427,8 +427,8 @@ RField*	RTable::DbGetFieldObject(const char* fldname, int offset) {
 	return NULL;
 	}
 
-char*	RTable::DbGetChar(const char* fldname, int offset) {
-	char* p;
+const char*	RTable::DbGetChar(const char* fldname, int offset) {
+	const char* p;
 	RField *fld;
 
 	fld = DbGetFieldObject(fldname, offset);
