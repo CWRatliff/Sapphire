@@ -128,8 +128,14 @@ int RDbf::Login(const char* dbfname) {
 	if (err > 0)
 		return 0;
 	if (dbfFd) {
+#ifdef MSDOS
 		_lseek(dbfFd, 0L, SEEK_SET);
 		_read(dbfFd, &dbfAvail, sizeof(NODE));
+#endif
+#ifdef LINUX
+		lseek(dbfFd, 0L, SEEK_SET);
+		read(dbfFd, &dbfAvail, sizeof(NODE));
+#endif
 		dbfBtree = new RBtree(dbfFd, dbfAvail);
 		}
 	return dbfFd;
