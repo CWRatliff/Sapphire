@@ -20,7 +20,7 @@ class RBtree {
 
 		int			Add(NDX_ID* ndxid, RKey &key, RData &data);
 		int			Delete(NDX_ID* ndxid);
-		char*		GetData(NDX_ID* ndxid);
+		const char*		GetData(NDX_ID* ndxid);
 	    int			GetRecno(NDX_ID* ndxid);
 		int			MoveNext(NDX_ID* ndxid);
 		int			MovePrevious(NDX_ID* ndxid);
