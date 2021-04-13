@@ -1,3 +1,6 @@
+#define MSDOS
+//#define LINUX
+
 //
 // 180306 - modified split to use size instead of count
 //			problem with combo of huge and tiny key:data 
@@ -5,7 +8,6 @@
 // 180612 - DeleteNode & NewNode reuse free nodes
 #include <string.h>
 #include <stdio.h>
-#include <io.h>
 #include <errno.h>
 #include <assert.h>
 #include "RField.h"
@@ -15,7 +17,15 @@
 #include "RData.hpp"
 #include "RNode.hpp"
 
+#ifdef MSDOS
+#include <io.h>
 extern	errno_t	err;
+#endif
+#ifdef LINUX
+#include <sys/types.h>
+#include <unistd.h>
+extern	int	err;
+#endif
 
 /* Symbolic index node format
 	+----+----+----+----+----+-------+----+----+
@@ -142,6 +152,7 @@ int RNode::DeleteNode() {
 	nodeLeftSibling = nodeAvail;
 	nodeRightSibling = nodeAvail;
 
+#ifdef MSDOS
 	_set_errno(0);
 	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
 	_get_errno(&err);
@@ -156,6 +167,19 @@ int RNode::DeleteNode() {
 	_write(nodeFd, &nodeCurr, sizeof(NODE));
 	_get_errno(&err);
 	assert(errno == 0);
+#endif
+#ifdef LINUX
+	errno = 0;
+	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
+	assert(errno == 0);
+	write(nodeFd, &nodeP0, 3 * sizeof(NODE));
+	assert(errno == 0);
+	nodeAvail = nodeCurr;
+	lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
+	assert(errno == 0);
+	write(nodeFd, &nodeCurr, sizeof(NODE));
+	assert(errno == 0);
+#endif
 
 	return 0;
 	}
@@ -265,6 +289,7 @@ NODE RNode::NewNode() {
 	int		rawpos;
 	NODE	avail;
 
+#ifdef MSDOS
 	_set_errno(0);
 	if (nodeAvail) {								// if allocated free space is available
 		_lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
@@ -291,7 +316,31 @@ NODE RNode::NewNode() {
 		assert(errno == 0);
 		nodeCurr = rawpos / NODESIZE;				// compute node number
 		}
-//	printf("node %d created\n", nodeCurr);
+#endif
+#ifdef LINUX
+	errno = 0;
+	if (nodeAvail) {								// if allocated free space is available
+		lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
+		assert(errno == 0);
+		read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
+		assert(errno == 0);
+		lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
+		assert(errno == 0);
+		write(nodeFd, &avail, sizeof(NODE));
+		assert(errno == 0);
+		nodeCurr = nodeAvail;
+		nodeAvail = avail;
+	}
+	else {
+		rawpos = lseek(nodeFd, 0L, SEEK_END);		// EOF
+		assert(errno == 0);
+		write(nodeFd, &nodeP0, NODESIZE);
+		assert(errno == 0);
+		nodeCurr = rawpos / NODESIZE;				// compute node number
+	}
+#endif
+
+	//	printf("node %d created\n", nodeCurr);
 	return(nodeCurr);
 	}
 //==================================================================
@@ -484,6 +533,7 @@ int RNode::Read(NODE node) {
 
 	if (nodeCurr == node)
 		return 1;
+#ifdef MSDOS
 	_set_errno(0);
 	_lseek(nodeFd, node*NODESIZE, SEEK_SET);
 	_get_errno(&err);
@@ -491,6 +541,15 @@ int RNode::Read(NODE node) {
 	bytes = _read(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
 	assert(errno == 0);
+#endif
+#ifdef LINUX
+	errno = 0;
+	lseek(nodeFd, node*NODESIZE, SEEK_SET);
+	assert(errno == 0);
+	bytes = read(nodeFd, &nodeP0, NODESIZE);
+	assert(errno == 0);
+#endif
+
 	if (bytes < NODESIZE)
 		return 0;
 	nodePage.Reset(&nodeMemory[0], KEYSPACE);
@@ -500,6 +559,7 @@ int RNode::Read(NODE node) {
 //==================================================================
 // Write a node object onto disk
 int RNode::Write() {
+#ifdef MSDOS
 	_set_errno(0);
 	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
 	_get_errno(&err);
@@ -507,5 +567,13 @@ int RNode::Write() {
 	_write(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
 	assert(errno == 0);
+#endif
+#ifdef LINUX
+	errno = 0;
+	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
+	assert(errno == 0);
+	write(nodeFd, &nodeP0, NODESIZE);
+	assert(errno == 0);
+#endif
 	return 0;
 	}
