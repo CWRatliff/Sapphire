@@ -1,3 +1,6 @@
+#define MSDOS
+//#define LINUX
+
 #include <memory.h>
 #include <stdarg.h> 
 #include <stdlib.h>
@@ -112,9 +115,17 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 		if (idb & STRING) {
 			ilen = strlen(ikey);
 			tlen = strlen(tkey);
-			len = __min(ilen, tlen);
+//			len = __min(ilen, tlen);
+			len = ilen;
+			if (ilen < tlen)
+				len = tlen;
 			if (idb & MSKNOCASE || tdb & MSKNOCASE)
+#ifdef MSDOS
 				rc = _strnicmp(ikey, tkey, len);
+#endif
+#ifdef LINUX
+			rc = strncasecmp(ikey, tkey, len);
+#endif
 			else
 				rc = memcmp(ikey, tkey, len);
 			if (rc == 0) {
@@ -255,7 +266,12 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 					*key = STRNUMERIC;
 				}
 			else if (type == 'f') {				// float
+#ifdef MSDOS
 				idata = (int)va_arg(arg, float);
+#endif
+#ifdef LINUX
+				idata = (int)va_arg(arg, double);
+#endif
 				data = (char *)&idata;
 				len = sizeof(float);
 				*key = FP;
