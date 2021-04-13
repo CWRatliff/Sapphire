@@ -2,7 +2,7 @@
 // 180304 closer delete of dbfname to errno()
 
 #define MSDOS
-//#define LINIX
+//#define LINUX
 
 #include <stdio.h>
 #include <fcntl.h>
@@ -24,6 +24,11 @@
 #ifdef MSDOS
 #include <io.h>
 extern	errno_t	err;
+#endif
+#ifdef LINUX
+#include <sys/types.h>
+#include <unistd.h>
+extern	int	err;
 #endif
 
 //=============================================================================
@@ -48,7 +53,7 @@ RDbf::~RDbf() {
 	if (dbfFd > 0)
 		_close(dbfFd);
 #endif
-#ifdef LINIX
+#ifdef LINUX
 	if (dbfFd > 0)
 		close(dbfFd);
 #endif
@@ -71,9 +76,17 @@ int	RDbf::Create(const char *dbfname) {
 	if (strstr(dosname, ".dbf") == 0)
 		strcat(dosname, ".dbf");
 	memset(zeros, 0, NODESIZE);
+#ifdef MSDOS
 	_set_errno(0);
 	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
 	_get_errno(&err);
+#endif
+#ifdef LINUX
+	errno = 0;
+	dbfFd = open(dosname,_S_IRUSR | _S_IWUSR);
+	err = errno;
+#endif
+
 	delete [] dosname;
 	if (err > 0)
 		return 0;
