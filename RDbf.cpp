@@ -83,7 +83,7 @@ int	RDbf::Create(const char *dbfname) {
 #endif
 #ifdef LINUX
 	errno = 0;
-	dbfFd = open(dosname, S_IRUSR | S_IWUSR);
+	dbfFd = open(dosname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
 	err = errno;
 #endif
 
@@ -121,7 +121,7 @@ int RDbf::Login(const char* dbfname) {
 #endif
 #ifdef LINUX
 	errno = 0;
-	dbfFd = open(dosname, S_IRUSR | S_IWUSR);
+	dbfFd = open(dosname, O_RDWR, S_IRUSR | S_IWUSR);
 	err = errno;
 #endif
 	delete[] dosname;
@@ -261,10 +261,17 @@ int RDbf::DbDeleteTable(const char* relname) {
 
 	// sweep thru linked list of rel's to make sure relation isn't open
 	for (relp = dbfRelRoot; relp; relp = relp->GetLink()) {
-		if (_stricmp(relname, relp->GetRelname()) == 0)
+#ifdef MSDOS
+	if (_stricmp(relname, relp->GetRelname()) == 0)
 			return (-1);
 		}
-	rc = dbfRelRoot->DropRelation(dbfBtree, relname);
+#endif
+#ifdef LINUX
+	if (strcasecmp(relname, relp->GetRelname()) == 0)
+		return (-1);
+}
+#endif
+rc = dbfRelRoot->DropRelation(dbfBtree, relname);
 	return rc;
 	}
 //===========================================================================
