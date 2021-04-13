@@ -83,7 +83,7 @@ int	RDbf::Create(const char *dbfname) {
 #endif
 #ifdef LINUX
 	errno = 0;
-	dbfFd = open(dosname,_S_IRUSR | _S_IWUSR);
+	dbfFd = open(dosname, S_IRUSR | S_IWUSR);
 	err = errno;
 #endif
 
@@ -91,7 +91,12 @@ int	RDbf::Create(const char *dbfname) {
 	if (err > 0)
 		return 0;
 	if (dbfFd) {
+#ifdef MSDOS
 		_write(dbfFd, zeros, NODESIZE);
+#endif
+#ifdef LINUX
+		write(dbfFd, zeros, NODESIZE);
+#endif
 		dbfAvail = 0;
 		dbfBtree = new RBtree(dbfFd, dbfAvail);
 		return dbfFd;
@@ -109,9 +114,16 @@ int RDbf::Login(const char* dbfname) {
 	strcpy(dosname, dbfname);
 	if (strstr(dosname, ".dbf") == 0)
 		strcat(dosname, ".dbf");
+#ifdef MSDOS
 	_set_errno(0);
-	dbfFd = _open(dosname, _O_BINARY | _O_RDWR);
+	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
 	_get_errno(&err);
+#endif
+#ifdef LINUX
+	errno = 0;
+	dbfFd = open(dosname, S_IRUSR | S_IWUSR);
+	err = errno;
+#endif
 	delete[] dosname;
 	if (err > 0)
 		return 0;
