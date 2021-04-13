@@ -180,7 +180,7 @@ int RBtree::GetRecno(NDX_ID* ndxid) {
 	return (recno);
 	}
 //==================================================================
-char* RBtree::GetData(NDX_ID* ndxid) {
+const char* RBtree::GetData(NDX_ID* ndxid) {
 	return (btNode->GetData(ndxid->ndxKeyNo));
 	}
 //==================================================================
@@ -228,7 +228,7 @@ void RBtree::PrintTree() {
 	NODE	leftNode[10];
 	
 	printf("\nTree printout of index # ");
-	printf("Root = %ld\n", ROOT);
+	printf("Root = %d\n", ROOT);
 //	btWork->Read(ROOT);
 	btNode = btRoot;
 	btNode->PrintNode();
