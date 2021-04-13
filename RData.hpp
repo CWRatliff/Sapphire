@@ -12,6 +12,7 @@ class RData {
 	public:
 		RData();
 		RData(char* item);
+		RData(const char* item);
 		RData(char *item, int dlen);
 		~RData();
 

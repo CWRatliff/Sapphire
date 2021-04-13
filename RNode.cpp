@@ -5,9 +5,7 @@
 // 180612 - DeleteNode & NewNode reuse free nodes
 #include <string.h>
 #include <stdio.h>
-//#include <io.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <io.h>
 #include <errno.h>
 #include <assert.h>
 #include "RField.h"
@@ -17,14 +15,14 @@
 #include "RData.hpp"
 #include "RNode.hpp"
 
-//extern	errno_t	err;
+extern	errno_t	err;
 
 /* Symbolic index node format
 	+----+----+----+----+----+-------+----+----+
 	| P0 | LS | RS | K1 | P1 |  ...  | Kn | Pn |
  	+----+----+----+----+----+-------+----+----+   */
 
-// Ki:Pi are symbols - Ki consists of a Key part Pi is a node #
+// Ki:Pi are composites - Ki consists of a Key part Pi is a node #
 // LS - Left Sibling node #
 // RS - Right Sibling node #
 // so that n keys will have n+1 pointers to other nodes
@@ -39,6 +37,9 @@
 	| 0  | LS | RS | k1:d1 |  ...  | kn:dn |
  	+----+----+----+-------+-------+-------+   */
 
+// since RNode owns the nodeMemory it is allowed to read from it directly,
+// even though it is managed exclusively by RPage
+// almost a class friend situation
 //==================================================================
 RNode::RNode(const int fileHandle, const NODE fileAvail) {
 	nodeFd = fileHandle;
@@ -105,7 +106,7 @@ int RNode::DeleteIndex(const int keyNo) {
 	else if (keyNo < nodePage.GetSlots()) {
 		nnNode = GetPi(keyNo+1);				// extract ptr
 		DeleteKey(keyNo+1);						// remove key
-		len = nodePage.GetLen(keyNo-1) - LNODE;
+		len = nodePage.GetDataLen(keyNo-1) - LNODE;
 		nodePage.Insert((char *)&nnNode, LNODE, keyNo-1, len);
 		}
 /*	 case 3: delete RHE node
@@ -141,18 +142,19 @@ int RNode::DeleteNode() {
 	nodeLeftSibling = nodeAvail;
 	nodeRightSibling = nodeAvail;
 
-//	_set_errno(0);
-//	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
-//	_get_errno(&err);
-	errno = 0;
-	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
+	_set_errno(0);
+	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
+	_get_errno(&err);
 	assert(errno == 0);
-	write(nodeFd, &nodeP0, 3 * sizeof(NODE));
+	_write(nodeFd, &nodeP0, 3 * sizeof(NODE));
+	_get_errno(&err);
 	assert(errno == 0);
 	nodeAvail = nodeCurr;
-	lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
+	_lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
+	_get_errno(&err);
 	assert(errno == 0);
-	write(nodeFd, &nodeCurr, sizeof(NODE));
+	_write(nodeFd, &nodeCurr, sizeof(NODE));
+	_get_errno(&err);
 	assert(errno == 0);
 
 	return 0;
@@ -160,8 +162,8 @@ int RNode::DeleteNode() {
 //==================================================================
 // returns a pointer to the data part of a key:data item
 
-char* RNode::GetData(const int keyno) {
-	char*	item;
+const char* RNode::GetData(const int keyno) {
+	const char*	item;
 	RKey	key;
 
 	item = GetKi(keyno);
@@ -173,7 +175,7 @@ char* RNode::GetData(const int keyno) {
 // access a key from the node and make a Key object from it
 
 void RNode::GetKey(RKey *key, const int keyno) {
-	char	*item;
+	const char	*item;
 
 	if (keyno > GetCount())				//0522
 		item = GetKi(GetCount());
@@ -185,7 +187,7 @@ void RNode::GetKey(RKey *key, const int keyno) {
 // access RHE key from the node and make a Key object from it
 
 void RNode::GetLastKey(RKey *key) {
-	char	*item;
+	const char	*item;
 	int		kn;
 
 	kn = nodePage.GetSlots();
@@ -197,7 +199,7 @@ void RNode::GetLastKey(RKey *key) {
 
 NODE RNode::GetPi(const int i) {
 	RKey	tkey;
-	char	*item;
+	const char	*item;
 	int		klen;
 	NODE	Pi;
 
@@ -263,23 +265,29 @@ NODE RNode::NewNode() {
 	int		rawpos;
 	NODE	avail;
 
-	errno = 0;
+	_set_errno(0);
 	if (nodeAvail) {								// if allocated free space is available
-		lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
+		_lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
+		_get_errno(&err);
 		assert(errno == 0);
-		read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
+		_read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
+		_get_errno(&err);
 		assert(errno == 0);
-		lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
+		_lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
+		_get_errno(&err);
 		assert(errno == 0);
-		write(nodeFd, &avail, sizeof(NODE));
+		_write(nodeFd, &avail, sizeof(NODE));
+		_get_errno(&err);
 		assert(errno == 0);
 		nodeCurr = nodeAvail;
 		nodeAvail = avail;
 	}
 	else {
-		rawpos = lseek(nodeFd, 0L, SEEK_END);		// EOF
+		rawpos = _lseek(nodeFd, 0L, SEEK_END);		// EOF
+		_get_errno(&err);
 		assert(errno == 0);
-		write(nodeFd, &nodeP0, NODESIZE);
+		_write(nodeFd, &nodeP0, NODESIZE);
+		_get_errno(&err);
 		assert(errno == 0);
 		nodeCurr = rawpos / NODESIZE;				// compute node number
 		}
@@ -298,7 +306,7 @@ int RNode::NextKey(int keyno) {
 NODE RNode::NextNode() {
 	NODE nnNext;
 
-	if ((nnNext = nodeRightSibling)) {
+	if (nnNext = nodeRightSibling) {
 		Read(nodeRightSibling);
 		return nnNext;
 		}
@@ -314,7 +322,7 @@ int RNode::PrevKey(int keyno) {
 NODE RNode::PrevNode() {
 	NODE nnPrev;
 
-	if ((nnPrev = nodeLeftSibling)) {
+	if (nnPrev = nodeLeftSibling) {
 		Read(nodeLeftSibling);
 		return nnPrev;
 		}
@@ -424,7 +432,7 @@ int RNode::Split(RNode *node2) {
 	RNode	work(nodeFd);
 	NODE	nnRight;
 	int		lKeys, rKeys;
-	char	*item;
+	const char	*item;
 	int		len, nlen;
 	int		ttllen;
 	int		half;
@@ -435,7 +443,7 @@ int RNode::Split(RNode *node2) {
 	ttllen = 0;
 	half = nodePage.GetUsed() / 2;				// middle aiming point
 	for (lKeys = 0; lKeys < nlen; lKeys++) {
-		ttllen += nodePage.GetLen(lKeys);		// add up cum size so far
+		ttllen += nodePage.GetDataLen(lKeys);		// add up cum size so far
 		if (ttllen >= half)
 			break;
 		}
@@ -446,8 +454,8 @@ int RNode::Split(RNode *node2) {
 	
 	// move right half of node into new node
 	for (int i = 0; i < rKeys; i++) {
-		item = nodePage.GetItem(lKeys+i);
-		len = nodePage.GetLen(lKeys+i);
+		item = nodePage.GetDataItem(lKeys+i);
+		len = nodePage.GetDataLen(lKeys+i);
 		node2->nodePage.Allocate(i, len);
 		node2->nodePage.Insert(item, len, i);
 		} 
@@ -476,10 +484,12 @@ int RNode::Read(NODE node) {
 
 	if (nodeCurr == node)
 		return 1;
-	errno = 0;
-	lseek(nodeFd, node*NODESIZE, SEEK_SET);
+	_set_errno(0);
+	_lseek(nodeFd, node*NODESIZE, SEEK_SET);
+	_get_errno(&err);
 	assert(errno == 0);
-	bytes = read(nodeFd, &nodeP0, NODESIZE);
+	bytes = _read(nodeFd, &nodeP0, NODESIZE);
+	_get_errno(&err);
 	assert(errno == 0);
 	if (bytes < NODESIZE)
 		return 0;
@@ -490,10 +500,12 @@ int RNode::Read(NODE node) {
 //==================================================================
 // Write a node object onto disk
 int RNode::Write() {
-	errno = 0;
-	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
+	_set_errno(0);
+	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
+	_get_errno(&err);
 	assert(errno == 0);
-	write(nodeFd, &nodeP0, NODESIZE);
+	_write(nodeFd, &nodeP0, NODESIZE);
+	_get_errno(&err);
 	assert(errno == 0);
 	return 0;
 	}

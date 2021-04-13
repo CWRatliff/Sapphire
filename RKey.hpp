@@ -18,13 +18,13 @@ class	RKey {
 		int		GetKeyTail();
 		int		KeyAppend(RKey &otherKey);
 		int		KeyCompare(RKey &otherKey);
-		int		KeyCompare(char *keyString);
+		int		KeyCompare(const char *keyString);
 					
 		int		SetKey(const char *str);
 		int		MakeSearchKey(const char *tmplte, ...);
 
 		void	operator=(const RKey &other);
-				RKey& operator=(char *);
+				RKey& operator=(const char *);
 		void	PrintKey();
 				
 	private:

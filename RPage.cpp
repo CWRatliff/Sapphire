@@ -8,8 +8,8 @@ using	std::hex;
 using	std::dec;
 
 #define	MAX			32767
-#define	OSETLEN		0
-#define	OSETCNT		1
+#define	OSETLEN		0		// offset of length word
+#define	OSETCNT		1		// offset of count word
 #define	OSETFRE		2
 #define	OSETLWM		3
 #define	OSETP		8
@@ -17,31 +17,35 @@ using	std::dec;
 
 //	Heap object management
 //		1.  For small heaps (< 64K)
-//		2.  Page is built from RHE down,
-//		3.  Slots are built from LHE up.
-//		4.  Page is addressed as an array of short int's (2-byte) AKA 'word'
+//		2.  Page data items built from RHE down,
+//		3.  Location Slots are built from LHE up.
+//		4.  Page is addressed as an array of short int's (16 bit) AKA 'word'
 //		5.	Content of a slot is the address of the length portion of an item
 //				i.e. &page[slotx] => @(slotx's length)
 //						slotx = page[slot#]
 //						@(slotx data) = &page[slotx - len]
-//		6.  Page space is allocated in words.
-//		7.  Item length designates the number of bytes requested + 2 length bytes
+//		6.  Item length designates the number of bytes requested + 2 length bytes
 //				(the byte allocation may be incremented to get to an even allocation).
-//		8.  Free'd blocks are denoted by a negative or zero length (always even)
-//		9.  The length block is on the RHE of the allocation.
-//		10. Memory is provided by user ("gift")
-//		11. Initially, all memory is free, there are no used slots and the 
+//		7.  Free'd blocks are denoted by a negative or zero length (always even)
+//		8.  The length block (word) is on the RHE of the allocation.
+//				+-----------------+-----+
+//				| data item ......| len |
+//				+-----------------+-----+
+//				|<----- len ----->|
+//				|< @data item
+//		9. Memory is provided by user ("gift")
+//		10. Initially, all memory is free, there are no used slots and the 
 //				free length block encompasses the whole Page.
-//		12. pLen, pCount, pFree & pLWM all begin at page space (OSETP)
-//		13. len (and variants) are in short words
-//				size (and varients) are len + 1 (includes len word itself)
+//		11. pLen, pCount, pFree & pLWM origin is at page space (OSETP)
+//		12. len (and variants) are in short words
+//				size (and variants) are len + 1 (includes len word itself)
 //				ptr's and variants are array subscripts into Page
 //				xsize is size + 1 for the associated slot[]
 //		x.	This class is built as a compromise on memory usage (for the
 //				data portion) and speed with speed usually dominant
 //				a) Data movement minimized
-//				b) Garbage collection at allocation (not at delete time)
-//				c) Uses 1st ready space preferably 
+//				b) Garbage collection as needed (not at delete time)
+//				c) Uses 1st avail space preferably 
 /*
 			+------+------+------+-----+
 			|pLen  |pCount|pFree |pLWM |
@@ -73,7 +77,7 @@ RPage::RPage(char *gift, const int bytelen) {
 	Reset(gift, bytelen);
 	*pLWM = *pFree = *pLen = (bytelen - OSETP)>>1;// usable Page in words
 	*pCount = 0;
-	memset(page, 0, *pLen);  			// TBD non-essential
+	memset(page, 0, *pLen);
 	}
 //==================================================================
 //	Allocate space in the page at a specific slot position
@@ -141,9 +145,8 @@ int RPage::Delete(const int slot1, const int slot2) {
 //==================================================================
 // Return the address of the data specified by a slot number
 //	return zero if error
-// ??? maybe we should copy item to user's memory and not give our address away
 
-char* RPage::GetItem(const int slot) {
+const char* RPage::GetDataItem(const int slot) {
 
 	short	iptr;
 	int		len;
@@ -159,7 +162,7 @@ char* RPage::GetItem(const int slot) {
 //==================================================================
 // Return the length of a data item (in bytes)
 
-int RPage::GetLen(const int slot) {
+int RPage::GetDataLen(const int slot) {
 	int		iptr;
 
 	if (slot >= *pCount || slot < 0)			// if slot out of bounds

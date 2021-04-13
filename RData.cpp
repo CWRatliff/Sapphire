@@ -52,6 +52,14 @@ RData::RData(char *item, int dlen) {
 	datLen = dlen;
 	}
 //==================================================================
+RData::RData(const char *item) {
+	/*
+	create an RData object using a given data stream "item"
+	*/
+	datStr = new char[DATAMAX];
+	memcpy(datStr, item, DATAMAX);
+}
+//==================================================================
 RData::~RData() {
 	if (datStr)
 		delete [] datStr;

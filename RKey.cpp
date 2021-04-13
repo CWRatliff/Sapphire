@@ -71,7 +71,7 @@ int RKey::KeyCompare(RKey &otherKey) {
 	return (Compare(keyStr, otherKey.keyStr));
 	}
 //==================================================================
-int RKey::KeyCompare(char *keyString) {
+int RKey::KeyCompare(const char *keyString) {
 	return (Compare(keyStr, keyString));
 	}	
 
@@ -101,7 +101,7 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 	for (rc = 0; rc == 0;) {
 		idb = *ikey++;								// get next descriptor
 		tdb = *tkey++;
-		if ((idb == 0) && (tdb == 0))
+		if (idb == 0 && tdb == 0)
 			return (0);
 		if (tdb == 0)
 			return (2);
@@ -112,12 +112,9 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 		if (idb & STRING) {
 			ilen = strlen(ikey);
 			tlen = strlen(tkey);
-//			len = _min(ilen, tlen); // MSVS
-			len = ilen;
-			if (tlen < ilen)
-				len = tlen;
+			len = __min(ilen, tlen);
 			if (idb & MSKNOCASE || tdb & MSKNOCASE)
-				rc = strncasecmp(ikey, tkey, len);
+				rc = _strnicmp(ikey, tkey, len);
 			else
 				rc = memcmp(ikey, tkey, len);
 			if (rc == 0) {
@@ -250,7 +247,7 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 				if (len > 63) {
 					return (-1);				// error, too long
 					}
-				if (type == 's')
+				if (type = 's')
 					*key = STRING;
 				else if (type == 'u')
 					*key = STRING | MSKNOCASE;
@@ -258,8 +255,7 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 					*key = STRNUMERIC;
 				}
 			else if (type == 'f') {				// float
-//				idata = (int)va_arg(arg, float); //unix no likey
-				idata = (int)va_arg(arg, double);
+				idata = (int)va_arg(arg, float);
 				data = (char *)&idata;
 				len = sizeof(float);
 				*key = FP;
@@ -302,7 +298,7 @@ void RKey::operator=(const RKey &other) {
 	}
 	
 //==================================================================
-RKey& RKey::operator=(char* item) { 
+RKey& RKey::operator=(const char* item) { 
 	keyLen = KeyLength(item);
 //	keyStr = new char[KEYMAX];
 	memcpy(keyStr, item, keyLen);

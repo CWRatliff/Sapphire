@@ -19,8 +19,8 @@ class RPage {
 		int		BigEnough(const int len);
 		int		Delete(const int slot);
 		int		Delete(const int slot1, const int slot2);
-		char*	GetItem(const int slot);
-		int		GetLen(const int slot);
+		const char*	GetDataItem(const int slot);
+		int		GetDataLen(const int slot);
 		int		GetSlots() {return *pCount;}
 		int		GetUsed() {return(*pLen - *pFree);}
 		void	Initialize(char *gift, const int len);

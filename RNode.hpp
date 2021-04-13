@@ -32,7 +32,7 @@ class RNode {
 		int			DeleteNode();
 		int			GetCount() {return (nodePage.GetSlots());}
 		NODE		GetCurrNode() {return nodeCurr;}
-		char*		GetData(int keyno);
+		const char*		GetData(int keyno);
 		void		GetKey(RKey *key, const int keyno);
 		void		GetLastKey(RKey *key);
 		NODE		GetLeftSibling() {return (nodeLeftSibling);}
@@ -60,7 +60,7 @@ class RNode {
 		int			Write();
 
 	private:
-		char*		GetKi(const int i) {return (nodePage.GetItem(i-1));}
-		char*		GetItem(const int i) {return (nodePage.GetItem(i-1));}
+		const char*		GetKi(const int i) {return (nodePage.GetDataItem(i-1));}
+		const char*		GetItem(const int i) {return (nodePage.GetDataItem(i-1));}
 	};
 #endif
