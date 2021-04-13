@@ -8,7 +8,7 @@
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
-//#include "ndbdefs.h"
+#include "ndbdefs.h"
 #include "utility.h"
 
 // Index record layout
@@ -117,7 +117,7 @@ int RIndex::Delete() {
 // return the data into a RField list
 int	RIndex::Fetch(RField* fldlst[]) {
 	RField*	fld;
-	char*	item;
+	const char*	item;
 
 	item = ndxBTree->GetData(&ndx_ID);		// skip over key part
 	ItemDistribute(item, fldlst);			// distribute data fields
@@ -135,7 +135,7 @@ int	RIndex::Fetch(RField* fldlst[]) {
 int	RIndex::Fetch(int recno, RField* fldlst[]) {
 	RField*	fld;
 	RKey	key;
-	char*	item;
+	const char*	item;
 	int		rc;
 
 	key.MakeSearchKey("ii", ndxNo, recno);
@@ -216,7 +216,7 @@ int RIndex::Find(RKey &key) {
 		return -1;							// we went past the end of this keyno
 	rc = ndxkey.KeyCompare(ndx_ID.ndxKey);
 	// reassign return code
-	if (rc == -2)							// if equal but key smaller than index key
+	if (rc == -2)							// exact match but fewer fields						// if equal but key smaller than index key
 		rc = 0;
 	if (rc == -1)							// key smaller is OK, remap
 		rc = 1;
