@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include "RField.h"
 #include "RKey.hpp"
-#include "ndbdefs.h"
+#include "Ndbdefs.h"
 #include "utility.h"
 #include "dbdef.h"
 //===================================================================
@@ -88,8 +88,8 @@ int ItemBuild(char *dest, int nflds, RField *fldlst[]) {
 
 //===================================================================
 // Break down an item into individual fields
-int ItemDistribute(char* src, RField *fldlst[]) {
-	char	*p;
+int ItemDistribute(const char* src, RField *fldlst[]) {
+	const char	*p;
 	int		idb;
 	int		ilen;
 	int		i;
