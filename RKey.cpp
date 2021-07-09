@@ -1,6 +1,7 @@
-#define MSDOS
-//#define LINUX
+// 210707 - Compare greatly revised, KeyCompare(s) order of calling Compare reversed
+//			they were calling search key, then index key
 
+#include "OS.h"
 #include <memory.h>
 #include <stdarg.h> 
 #include <stdlib.h>
@@ -21,9 +22,9 @@
 //   <--------------- keyLen ---------------->
 
 // key composition:
-//		?up to 5 subfields                             
+//		up to 5 subfields                             
 //		max key length 256 bytes
-//		each subfield is prceeded by a descriptor byte (kcb)
+//		each subfield is preceeded by a descriptor byte (kcb)
 //		1xxx xxxx	- descending order
 //		x010 0000	- alphanumeric string (zero terminated)
 //		x110 0000	- alpha string uncased
@@ -71,12 +72,14 @@ int	RKey::KeyAppend(RKey &otherKey) {
 	}
 //==================================================================
 int RKey::KeyCompare(RKey &otherKey) {
+//	return (Compare(otherKey.keyStr));	//210705
 	return (Compare(keyStr, otherKey.keyStr));
-	}
+}
 //==================================================================
 int RKey::KeyCompare(const char *keyString) {
-	return (Compare(keyStr, keyString));
-	}	
+//	return (Compare(keyStr, keyString));	//210705
+	return (Compare(keyString, keyStr));
+}
 
 //==================================================================
 int RKey::Compare(const char *ikey, const char *tkey) {
@@ -97,77 +100,81 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 	int		tlen;									// test length
 	int		len;
 	int		rc;										// ret code
+	int		rcs;
 	int		iint, tint;
 	float	ifp, tfp;
 	double	idp, tdp;
 
-	for (rc = 0; rc == 0;) {
-		idb = *ikey++;								// get next descriptor
+	// ndxno key subfields must be equal
+	idb = *ikey++;
+	tdb = *tkey++;
+	if (idb != 1 || tdb != 1)
+		return -3;
+	iint = *((int *)ikey);
+	tint = *((int *)tkey);
+	if (iint < tint)
+		return (-1);
+	if (iint > tint)
+		return (1);
+	ikey += sizeof(int);
+	tkey += sizeof(int);
+
+	for (rc = 0; rc == 0;) {					// while subkeys are equal
+		idb = *ikey++;							// get next descriptor
 		tdb = *tkey++;
-		if (idb == 0 && tdb == 0)
-			return (0);
-		if (tdb == 0)
-			return (2);
-		if (idb == 0)
-			return (-2);
-			
+
+		if (tdb == 0)							// end of search key
+			break;
+
 		// is this subfield one of the string types?
 		if (idb & STRING) {
 			ilen = strlen(ikey);
 			tlen = strlen(tkey);
-//			len = __min(ilen, tlen);
-			len = ilen;
-			if (ilen < tlen)
+
+			len = ilen;							// min length
+			if (ilen > tlen)
 				len = tlen;
+
 			if (idb & MSKNOCASE || tdb & MSKNOCASE)
-#ifdef MSDOS
-				rc = _strnicmp(ikey, tkey, len);
-#endif
-#ifdef LINUX
-			rc = strncasecmp(ikey, tkey, len);
-#endif
+				rcs = strnicmp(ikey, tkey, len);
 			else
-				rc = memcmp(ikey, tkey, len);
-			if (rc == 0) {
+				rcs = memcmp(ikey, tkey, len);
+
+			if (rcs == 0) {
 				if (ilen < tlen)				// if strings equal but length unequal
 					rc = -1;					// if ikey smaller tkey, ikey is smaller
 				if (ilen > tlen)
 					rc = 1;						// tkey smaller
 				}
-			ilen++;
+			else
+				rc = rcs;
+
+			ilen++;								// step over '\0'
 			tlen++;
 			}
 		else if ((idb & MSKASC) == FP) {
-			ifp = tfp = 0;
-			ilen = sizeof(float);
-			tlen = sizeof(float);
+			ilen = tlen = sizeof(float);
 			ifp = *((float*)ikey);
 			tfp = *((float*)tkey);
-			rc = 0;
 			if (ifp < tfp)
 				rc = -1;
 			else if (ifp > tfp)
 				rc = 1;
+
 			}
 		else if ((idb & MSKASC)  == DP) {
-			idp = tdp = 0;
-			ilen = sizeof(double);
-			tlen = sizeof(double);
+			ilen = tlen = sizeof(double);
 			idp = *((double*)ikey);
 			tdp = *((double*)tkey);
-			rc = 0;
 			if (idp < tdp)
 				rc = -1;
 			else if (idp > tdp)
 				rc = 1;
 			}
 		else if ((idb & MSKASC)  == INT) {
-			iint = tint = 0;
-			ilen = sizeof(int);
-			tlen = sizeof(int);
+			ilen = tlen = sizeof(int);
 			iint = *((int*)ikey);
 			tint = *((int*)tkey);
-			rc = 0;
 			if (iint < tint)
 				rc = -1;
 			else if (iint > tint)
@@ -178,6 +185,7 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 		if (idb & MSKDESC || tdb & MSKDESC)
 			rc = rc * -1;					// flip return code if descending key
 		} 
+
 	return (rc);
 	}
 //==================================================================
@@ -241,6 +249,8 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 	int		len;
 	int		type;
 	int		idata;
+	float	fdata;
+	double	ddata;
 	char	*data;
 	char	temp[KEYMAX];
 	char	*key = &temp[0];
@@ -258,7 +268,7 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 				if (len > 63) {
 					return (-1);				// error, too long
 					}
-				if (type = 's')
+				if (type == 's')
 					*key = STRING;
 				else if (type == 'u')
 					*key = STRING | MSKNOCASE;
@@ -266,19 +276,14 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 					*key = STRNUMERIC;
 				}
 			else if (type == 'f') {				// float
-#ifdef MSDOS
-				idata = (int)va_arg(arg, float);
-#endif
-#ifdef LINUX
-				idata = (int)va_arg(arg, double);
-#endif
-				data = (char *)&idata;
+				fdata = (float)va_arg(arg, double);
+				data = (char *)&fdata;
 				len = sizeof(float);
 				*key = FP;
 				}
 			else if (type == 'd') {				// double
-				idata = (int)va_arg(arg, double);
-				data = (char *)&idata;
+				ddata = va_arg(arg, double);
+				data = (char *)&ddata;
 				len = sizeof(double);
 				*key = DP;
 				}

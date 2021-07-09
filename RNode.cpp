@@ -1,11 +1,10 @@
-#define MSDOS
-//#define LINUX
-
 //
 // 180306 - modified split to use size instead of count
 //			problem with combo of huge and tiny key:data 
 // added errno check after I/O
 // 180612 - DeleteNode & NewNode reuse free nodes
+
+#include "OS.h"
 #include <string.h>
 #include <stdio.h>
 #include <errno.h>
@@ -433,6 +432,7 @@ int RNode::ScanNode(RKey &key) {
 	int		lo, hi;
 	int		i;
 	int		res;
+	const char*	ki;
 	
 	hi = GetCount();
 	if (hi <= 0)
@@ -440,13 +440,14 @@ int RNode::ScanNode(RKey &key) {
 	lo = 1;	
 	while (lo <= hi) {
 		i = (lo + hi) / 2;
-		res = key.KeyCompare(GetKi(i));			// res = -1 < 0 < 1 less:equal:greater
+		ki = GetKi(i);
+		res = key.KeyCompare(ki);				// res = -1 < 0 < 1 less:equal:greater
 		if (lo == hi) {							// end of scan
-			if (res < 0)						// but key < Ki[hi]
+			if (res > 0)						// but key < Ki[hi]
 				hi--;
 			break;
 			}
-		if (res > 0)
+		if (res < 0)
 			lo = i + 1;
 		else if (res == 0)						// a hit becomes hi
 			hi = i;								// there may be lower exact hits
@@ -456,8 +457,6 @@ int RNode::ScanNode(RKey &key) {
 	if (res == 0)
 		return (hi);							// direct hit
 	return (-hi);								// between Ki & Ki+1
-//	res = (res == 0) ? hi : -hi;				// hit or between?
-	return (res);
  	} 
 //==================================================================
 // scan index node for an entry that points down to a descendant

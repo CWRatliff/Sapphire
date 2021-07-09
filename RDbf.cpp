@@ -1,9 +1,7 @@
 // 180302 windows/dos errno put into create
 // 180304 closer delete of dbfname to errno()
 
-#define MSDOS
-//#define LINUX
-
+#include "OS.h"
 #include <stdio.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -114,6 +112,7 @@ int RDbf::Login(const char* dbfname) {
 	strcpy(dosname, dbfname);
 	if (strstr(dosname, ".dbf") == 0)
 		strcat(dosname, ".dbf");
+
 #ifdef MSDOS
 	_set_errno(0);
 	dbfFd = _open(dosname, _O_BINARY | _O_RDWR | _O_CREAT, _S_IREAD | _S_IWRITE);
@@ -174,14 +173,15 @@ int	RDbf::DbMakeTable(const char* relname, RField* fldlst[]) {
 	rc = rel.MakeRelation(dbfBtree, relname, fldlst);
 	return rc;
 }
+//===========================================================================
 /*
-DbOpenTable	- Open a data relation
+DbOpenTable	- Open a data table
 
-RTable*	DbOpenTable(const char* relname)
+RTable*	DbOpenTable(const char* tablename)
 
-Opens the specified data Table (Tablename) in the specified database
-(dbfID), prepares the data relation for further access and modification,
-returns a relation_id (relID) and creates a record buffer for the relation.
+Opens the specified data Table in 'this' database
+and prepares the data table for further access and modification,
+returns a table object and creates a record buffer for the table.
 The record buffer is initially clear. All secondary indexes are initialized
 and set to UNPOSITIONED status.
 
@@ -195,11 +195,16 @@ Returns
 	On sucess, a pointer to the table object is returned
 	On failure, a NULL will be returned.
 */
-//===========================================================================
 RTable* RDbf::DbOpenTable(const char* relname) {
 	RTable*	rel;
+	RTable*	relp;
 	int		rc;
 
+	// sweep thru linked list of rel's to make sure table isn't open
+	for (relp = dbfRelRoot; relp; relp = relp->GetLink()) {
+		if (stricmp(relname, relp->GetRelname()) == 0)
+			return (0);
+		}
 	rel = new RTable;
 	rc = rel->OpenRelation((dbfID)this, dbfBtree, relname);
 	if (rc < 0) {
@@ -228,13 +233,14 @@ int RDbf::DbCloseTable(RTable* rel) {
 
 	if (rel == 0)
 		return -1;
-	rel->CloseRelation();
 	if (dbfRelRoot == rel)
 		dbfRelRoot = rel->GetLink();
 	for (xrel = dbfRelRoot; xrel; xrel = xrel->GetLink()) {
 		if (xrel->GetLink() == rel) {
 			xrel->SetLink(rel->GetLink());
+			break;
 			}
+		return (-1);
 		}
 	delete rel;
 	return 0;
@@ -261,17 +267,10 @@ int RDbf::DbDeleteTable(const char* relname) {
 
 	// sweep thru linked list of rel's to make sure relation isn't open
 	for (relp = dbfRelRoot; relp; relp = relp->GetLink()) {
-#ifdef MSDOS
-	if (_stricmp(relname, relp->GetRelname()) == 0)
+		if (stricmp(relname, relp->GetRelname()) == 0)
 			return (-1);
 		}
-#endif
-#ifdef LINUX
-	if (strcasecmp(relname, relp->GetRelname()) == 0)
-		return (-1);
-}
-#endif
-rc = dbfRelRoot->DropRelation(dbfBtree, relname);
+	rc = dbfRelRoot->DropRelation(dbfBtree, relname);
 	return rc;
 	}
 //===========================================================================

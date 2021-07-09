@@ -228,7 +228,7 @@ void RBtree::PrintTree() {
 	NODE	leftNode[10];
 	
 	printf("\nTree printout of index # ");
-	printf("Root = %d\n", ROOT);
+	printf("Root = %ld\n", ROOT);
 //	btWork->Read(ROOT);
 	btNode = btRoot;
 	btNode->PrintNode();
@@ -256,67 +256,6 @@ int RBtree::Search(NDX_ID* ndxid, RKey &key) {
 	if (ndxid->ndxStatus == BETWEEN)
 		return 1;
 	return -1;
-	}
-//==================================================================
-// Seek for a key within the tree
- 
-// return n if key == Kn
-// return 0 if key < K1 (also tree empty)
-// return -i if Ki < key < Ki+1 or Kn < key
-
-// modifies:
-// ndxKeyNo = tree key that is <= search key
-//			N.B. can be > Kn if no <= condition exists (IEOF)
-// ndxStatus = ONKEY, BETWEEN, IEOF, or UNPOSITIONED
-// ndxNode
-// ndxKey
-
-int RBtree::Seek(NDX_ID* ndxid, RKey &key) {
-	int		res;								// scan result
-	NODE	nnNode;								// node # of working node
-	
-	if (btRoot->GetCount() == 0) {				// empty tree
-		ndxid->ndxKeyNo = 0;
-		ndxid->ndxStatus = UNPOSITIONED;
-		return (0);
-		}
-	// descend levels of the tree
-	for (nnNode = ROOT, btNode = btRoot, btLev = 0;;btLev++) {
-		btPath[btLev] = nnNode;
-		res = btNode->ScanNode(key);
-		if (btNode->GetP0() == 0)				// if this is a leaf node, quit
-			break;
-		// if res > 0 ==> exact hit, use Pi-1
-		//        < 0 ==> between, use Pi
-		//        = 0 ==> less than K1, use P0
-		res = (res > 0) ? res-1 : -res;
-		nnNode = btNode->GetPi(res);
-		btNode = btWork;
-		btNode->Read(nnNode);
-		}
-
-	// at leaf level
-	// if res > 0 then exact hit
-	//        = 0 then key smaller than K1
-	//        < 0 then key smaller than K(1+|res|)
-	if (res <= 0) {								// no hit, between or > last key
-		ndxid->ndxKeyNo = -res + 1;
-		if (ndxid->ndxKeyNo > btNode->GetCount()) // beware key > Kn
-			ndxid->ndxStatus = IEOF;
-//			ndxid->ndxNode = 0; //151125 undecided
-//			ndxid->ndxKeyNo = 0;
-//			return (0);
-		else
-			ndxid->ndxStatus = BETWEEN;
-		}
-	else {
-		ndxid->ndxKeyNo = res;
-		ndxid->ndxStatus = ONKEY;
-		}
-
-	ndxid->ndxNode = nnNode;
-	btNode->GetKey(&ndxid->ndxKey, ndxid->ndxKeyNo);
-	return res;
 	}
 //=====================================================================
 // P R I V A T E    M E T H O D S
@@ -532,6 +471,67 @@ int RBtree::MergeBalance(int level) {
 	return 0;									// no siblings
 	}
 
+//==================================================================
+// Seek for a key within the tree
+
+// return n if key == Kn
+// return 0 if key < K1 (also tree empty)
+// return -i if Ki < key < Ki+1 or Kn < key
+
+// modifies:
+// ndxKeyNo = tree key that is <= search key
+//			N.B. can be > Kn if no <= condition exists (IEOF)
+// ndxStatus = ONKEY, BETWEEN, IEOF, or UNPOSITIONED
+// ndxNode
+// ndxKey
+
+int RBtree::Seek(NDX_ID* ndxid, RKey &key) {
+	int		res;								// scan result
+	NODE	nnNode;								// node # of working node
+
+	if (btRoot->GetCount() == 0) {				// empty tree
+		ndxid->ndxKeyNo = 0;
+		ndxid->ndxStatus = UNPOSITIONED;
+		return (0);
+		}
+	// descend levels of the tree
+	for (nnNode = ROOT, btNode = btRoot, btLev = 0;;btLev++) {
+		btPath[btLev] = nnNode;
+		res = btNode->ScanNode(key);
+		if (btNode->GetP0() == 0)				// if this is a leaf node, quit
+			break;
+		// if res > 0 ==> exact hit, use Pi-1
+		//        < 0 ==> between, use Pi
+		//        = 0 ==> less than K1, use P0
+		res = (res > 0) ? res - 1 : -res;
+		nnNode = btNode->GetPi(res);
+		btNode = btWork;
+		btNode->Read(nnNode);
+		}
+
+	// at leaf level
+	// if res > 0 then exact hit
+	//        = 0 then key smaller than K1
+	//        < 0 then key smaller than K(1+|res|)
+	if (res <= 0) {								// no hit, between or > last key
+		ndxid->ndxKeyNo = -res + 1;
+		if (ndxid->ndxKeyNo > btNode->GetCount()) // beware key > Kn
+			ndxid->ndxStatus = IEOF;
+		//			ndxid->ndxNode = 0; //151125 undecided
+		//			ndxid->ndxKeyNo = 0;
+		//			return (0);
+		else
+			ndxid->ndxStatus = BETWEEN;
+	}
+	else {
+		ndxid->ndxKeyNo = res;
+		ndxid->ndxStatus = ONKEY;
+	}
+
+	ndxid->ndxNode = nnNode;
+	btNode->GetKey(&ndxid->ndxKey, ndxid->ndxKeyNo);
+	return res;
+}
 //==================================================================
 // set btNode pointer to the btRoot object or btWork based on stack depth
 

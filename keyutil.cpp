@@ -20,6 +20,8 @@ int MakeSearchKey(char* key, const char *tmplte, ...) {
 	int		len;
 	int		type;
 	int		idata;
+	float	fdata;
+	double	ddata;
 	char	*data;
  
  	va_start(arg, tmplte);
@@ -39,15 +41,14 @@ int MakeSearchKey(char* key, const char *tmplte, ...) {
 				*key = STRNUMERIC;
 			}
 		else if (type == 'f') {				// floating point
-//			idata = (int)va_arg(arg, float);
-			idata = (int)va_arg(arg, double);
-			data = (char *)&idata;
+			fdata = (float)va_arg(arg, double);
+			data = (char *)&fdata;
 			len = sizeof(float);
 			*key = FP;
 			}
 		else if (type == 'd') {				// double precision
-			idata = (int)va_arg(arg, double);
-			data = (char *)&idata;
+			ddata = va_arg(arg, double);
+			data = (char *)&ddata;
 			len = sizeof(double);
 			*key = DP;
 			}

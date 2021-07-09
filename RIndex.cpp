@@ -1,3 +1,7 @@
+// 210707 - Find() - reversed order of KeyCompare
+//			so test key is key terminator
+// 210709 - Next & Prev return 1 if new key != starting key
+
 #include <string.h>
 #include "dbdef.h"
 #include "RField.h"
@@ -15,31 +19,31 @@
 // +-------+----+----+---+----+-+----+
 // | ndxno | K1 | K2 |...| Kn |0| Pm |
 // +-------+----+----+---+----+-+----+
-// <---------- key area -------->
+// |<--------- key area ------->|
 
 // Primary index with data record layout
 // +-------+-------+-+----+----+-----+-+
 // | ndxno | recno |0| f0 | f1 | ... |0|
 // +-------+-------+-+----+----+-----+-+
-// <---- key area -->|<-- data area --->
+// |<--- key area -->|<-- data area -->|
 
 // Secondary index record layout
 // +-------+----+----+----+-------+-+-+
 // | ndxno | k0 | k1 |... | recno |0|0|
 // +-------+----+----+----+-------+-+-+
-// <--------- key area -------->|^- data area (empty, zero term)
+// |<---------- key area ---------->|^- data area (empty, zero term)
 
 // ndxno layout
 // +-----+---------+
 // | INT |  ndx #  |
 // +-----+-------=-+
-// <-sizeof(int)+1->
+// |<sizeof(int)+1>|
 
 // recno layout
 // +-----+---------+
 // | INT |  rec #  |
 // +-----+---------+
-// <-sizeof(int)+1->
+// |<sizeof(int)+1>|
 
 
 // Notes:
@@ -91,7 +95,6 @@ int RIndex::AddField(RField& fld, int desc) {
 int	RIndex::Add(int recno) {
 	RKey	key;
 	RKey	rkey;
-//	RData	data("");
 	RData	data;
 	char	keystr[KEYMAX];
 
@@ -166,8 +169,6 @@ return -1 if error
 1 if supplied key < index key
 
 Parameters
-relid - the handle to an open relation
-ndxid - index handle
 key - a user supplied character string containing a "search key" generally
 constructed vi the utility function MakeSearchKey q.v.
 
@@ -214,12 +215,13 @@ int RIndex::Find(RKey &key) {
 	rc = ndxBTree->Search(&ndx_ID, ndxkey);
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went past the end of this keyno
-	rc = ndxkey.KeyCompare(ndx_ID.ndxKey);
+//	rc = ndxkey.KeyCompare(ndx_ID.ndxKey);
+	rc = ndx_ID.ndxKey.KeyCompare(ndxkey);	// key order rqd. for search key terminator
 	// reassign return code
 	if (rc == -2)							// exact match but fewer fields						// if equal but key smaller than index key
 		rc = 0;
-	if (rc == -1)							// key smaller is OK, remap
-		rc = 1;
+//	if (rc == -1)		//210705			// key smaller is OK, remap
+//		rc = 1;
 	return (rc);
 	}
 //===========================================================================
@@ -234,10 +236,6 @@ DbAddRecord, DbUpdateRecord, DbDeleteRecord.
 
 Using zero as the index will use the relDataNdx which is
 the primary index for tables.
-
-Parameters
-relid - the handle to an open relation
-ndxid - index handle
 
 Returns
 -1 - error
@@ -307,10 +305,6 @@ Move the record pointer to the last record in the specified index.
 Using zero as the index will use the relDataNdx which is
 the primary index for tables.
 
-Parameters
-relid - the handle to an open relation
-ndxid - index handle
-
 Returns
 -1 - error
 *///==============================================================
@@ -344,21 +338,30 @@ are no more records (end-of-relation.)
 Using zero as the index will use the relDataNdx which is
 the primary index for tables.
 
-Parameters
-relid - the handle to an open relation
-ndxid - index handle
-
 Returns
 -1 - error
-*///==============================================================
+0  - new key == old key
+1  - new key != old key
+*/
+//==============================================================
 // advance index one record
 int RIndex::Next() {
+	RKey	prekey;
+	int		res;
+
+	prekey = ndx_ID.ndxKey;
 	if (ndx_ID.ndxStatus == IEOF || ndx_ID.ndxStatus == UNPOSITIONED)
 		return (-1);
 	int rc = ndxBTree->MoveNext(&ndx_ID);
+	if (rc < 0)					// 210709
+		return (rc);			// 210709
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went past the end of this keyno
-	return (rc);
+	res = prekey.KeyCompare(ndx_ID.ndxKey);
+	if (res < 0)
+		return (1);
+	return (0);
+
 	}
 //===========================================================================
 /*
@@ -379,21 +382,28 @@ Use this function to back through a relation in sequential record order
 Using zero as the index will use the relDataNdx which is
 the primary index for tables.
 
-Parameters
-relid - the handle to an open relation
-ndxid - index handle
-
 Returns
 -1 - error
-*///==============================================================
+0  - new key == old key
+1  - new key != old key
+*/
+//==============================================================
 // back up one record
 int RIndex::Prev() {
+	RKey	prekey;
+	int		res;
+
+	prekey = ndx_ID.ndxKey;		//210709
 	if (ndx_ID.ndxStatus == IEOF || ndx_ID.ndxStatus == UNPOSITIONED)
 		return (-1);
 	int rc = ndxBTree->MovePrevious(&ndx_ID);
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went before the start of this keyno
-	return (rc);
+	res = prekey.KeyCompare(ndx_ID.ndxKey);
+	if (res < 0)
+		return (1);
+	return (0);
+
 	}
 //==============================================================
 // build a keystring for every index in linked list
