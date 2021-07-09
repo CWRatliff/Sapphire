@@ -3,6 +3,7 @@
 #include <memory.h>
 #include <string.h>
 #include <stdio.h>
+#include <ctype.h>
 #include "RField.h"
 #include "RKey.hpp"
 #include "Ndbdefs.h"
@@ -175,19 +176,34 @@ void ItemPrint(char* src) {
 		}
 	}
 //==========================================================
-// tolower doesnt exist anymore apparently
 int stricpy(char* dest, char* src) {
 	int	cnt = 0;
 	int sch;
+
 	for (;; dest++, src++) {
 		sch = *src;
-		if (sch >= 'A' && sch <= 'Z') sch += 'a' - 'A';
-		*dest = sch;
+		*dest = tolower(sch);
 		cnt++;
-		if (sch = '\0')
+		if (sch == '\0')
 			break;
 		}
 	return cnt;
+	}
+//==========================================================
+int stricmp(char *s1, char *s2) {
+
+	while (1) {
+		char c1 = *s1++;
+		char c2 = *s2++;
+		int diff = tolower(c1) - tolower(c2);
+		if (0 == diff) {
+			if (c1 == '\0')
+				break;
+			}
+		else 
+			return diff;
+		}
+	return 0;
 	}
 /*
 int ItemLength(const char *item) {

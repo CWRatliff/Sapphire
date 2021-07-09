@@ -7,7 +7,7 @@ class RDbf {
 	private:
 		int		dbfFd;			// DOS file #
 		char*	dbfName;
-		RBtree*	dbfBtree;		// Btree indwex for this DB
+		RBtree*	dbfBtree;		// Btree index for this DB
 		RTable*	dbfRelRoot;		// relation linked list root
 		RDbf*	dbfLink;
 		NODE	dbfAvail;		// free allocated node (if any)
@@ -24,6 +24,7 @@ class RDbf {
 		RTable*	DbOpenTable(const char* relname);
 		int		DbCloseTable(RTable* rel);
 
+		const char* GetName() { return dbfName;}
 		RDbf*	GetLink() {return (dbfLink);}
 		int		SetLink(RDbf* dbf);
 
