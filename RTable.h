@@ -25,7 +25,6 @@ class RTable {
 
 		int		MakeRelation(RBtree* btree, const char *relname, RField *fldlst[]);
 		int		OpenRelation(dbfID dbf, RBtree* btree, const char* relname);
-		int		CloseRelation();
 		int		DropRelation(RBtree* btree, const char *relname);
 
 		int		DbAddRecord();
@@ -42,8 +41,8 @@ class RTable {
 
 		RField*	DbGetFieldObject(const char* fldname, int offset = 0);
 
-//		const char* DbGetChar(const char* fldname, int offset = 0);//210128
-		char*	DbGetChar(const char* fldname, int offset = 0);
+		const char* DbGetChar(const char* fldname, int offset = 0);
+		int		DbGetCharCopy(const char* fldname, char* data, int len, int offset);
 		int		DbGetInt(const char* fldname, int offset = 0);
 		float	DbGetFloat(const char* fldname, int offset = 0);
 		double	DbGetDouble(const char* fldname, int offset = 0);
