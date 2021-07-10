@@ -26,7 +26,8 @@ class RField {
 		int		GetType() {return (fldType);}
 		char*	GetDataAddr() {return (fldData); }
 
-		char*	GetChar();
+		const char*	GetCharPtr();
+		int		GetCharCopy(char* data, int len);
 		int		GetInt();
 		float	GetFloat();
 		double	GetDouble();
@@ -47,33 +48,48 @@ class RFieldC : public RField {
 		RFieldC(const char* fldname, char* flddata, int fldlen) : RField(fldname, flddata, STRING, fldlen) {}
 		RFieldC(const char* fldname, int fldtype, int fldlen) : RField(fldname, fldtype, fldlen) {}
 		const char*	Get();
-};
+		int GetCopy(char* data, int len);
+	};
 class RFieldI : public RField {
 	public:
 		RFieldI(const char* fldname) : RField(fldname, INT) {}
 		RFieldI(const char* fldname, char* flddata) : RField(fldname, flddata, INT, sizeof(int)) {}
 		int		Get();
-};
+	};
 class RFieldF : public RField {
 	public:
 		RFieldF(const char* fldname) : RField(fldname, FP) {}
 		RFieldF(const char* fldname, char* flddata) : RField(fldname, flddata, FP, sizeof(float)) {}
 		float	Get();
-};
+	};
 class RFieldD : public RField {
 	public:
 		RFieldD(const char* fldname) : RField(fldname, DP) {}
 		RFieldD(const char* fldname, char* flddata) : RField(fldname, flddata, DP, sizeof(double)) {}
 		double	Get();
-};
+	};
 
 //=============================================================================
 // fetch a char pointer to character type field data
-char* RFieldC::Get() {
-	char* p;
+const char* RFieldC::Get() {
+	const char* p;
 
 	p = GetDataAddr();
 	return (p);
+	}
+//=============================================================================
+// fetch a char pointer to character type field data
+int RFieldC::GetCopy(char* data, int len) {
+	char*	p;
+	int		flen;
+
+	p = fldData;
+	flen = fldLen;
+	if (len > flen)
+		len = flen;
+	strncpy(p, data, len);
+	data[len - 1] = '\0';
+	return len;
 	}
 //=============================================================================
 // fetch an int field

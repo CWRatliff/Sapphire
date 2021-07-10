@@ -13,7 +13,6 @@ RField::RField() {
 	fldOwner = FALSE;		// data area owned elsewhere
 	}
 //=============================================================================
-// const flddata???
 RField::RField(const char* fldname, char* flddata, int fldtype, int fldlen) {
 	int	len = strlen(fldname) + 1;
 	fldName = new char[len];
@@ -86,12 +85,25 @@ int RField::ClearField() {
 	}
 //=============================================================================
 // fetch a char pointer to character type field data
-const char* RField::GetChar() {
+const char* RField::GetCharPtr() {
 	const char* p;
 
 	p = fldData;
 	return (p);
-}
+	}
+//===========================================================================
+int	RField::GetCharCopy(char* data, int len) {
+	char*	p;
+	int		flen;
+
+	p = fldData;
+	flen = fldLen;
+	if (len > flen)
+		len = flen;
+	strncpy(p, data, len);
+	data[len - 1] = '\0';
+	return len;
+	}
 //=============================================================================
 // fetch an int field
 int RField::GetInt() {

@@ -293,7 +293,7 @@ RField*	RTable::DbGetFieldObject(const char* fldname, int offset) {
 	return NULL;
 	}
 //============================================================================
-const char*	RTable::DbGetChar(const char* fldname, int offset) {
+const char*	RTable::DbGetCharPtr(const char* fldname, int offset) {
 	const char* p;
 	RField *fld;
 
@@ -766,7 +766,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 		rc = ndxndx.Fetch(recno, fldndxlst);
 		if (rc < 0)
 			break;
-		rc = stricmp(fldndx1.GetChar(), relname);
+		rc = stricmp(fldndx1.GetCharPtr(), relname);
 		if (rc == 0) {
 			ndxrecno = fldndx3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -787,7 +787,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	recno = ndxrelx.GetRecno();
 	rc = ndxrel.Fetch(recno, fldrellst);
 	if (rc >= 0) {
-		rc = stricmp(fldrel1.GetChar(), relname);
+		rc = stricmp(fldrel1.GetCharPtr(), relname);
 		if (rc == 0) {
 			ndxrecno = fldrel3.GetInt();
 			ndx = new RIndex((relID)this, "", ndxrecno, btree);
@@ -1016,7 +1016,7 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		rc = ndxatr.Fetch(recno, fldfldlst);
 		if (rc < 0)
 			break;
-		rc = strcmp(fldfld1.GetChar(), relname);	// still the same relation?
+		rc = strcmp(fldfld1.GetCharPtr(), relname);	// still the same relation?
 		if (rc)
 			break;								// guess not
 		}
@@ -1033,7 +1033,7 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 	for (i = 0; i < count; i++) {
 		recno = ndxatrx.GetRecno();
 		rc = ndxatr.Fetch(recno, fldfldlst);
-		fld = new RField(fldfld2.GetChar(), fldfld3.GetInt(), fldfld4.GetInt());
+		fld = new RField(fldfld2.GetCharPtr(), fldfld3.GetInt(), fldfld4.GetInt());
 		relFldLst[i] = fld;
 		rc = ndxatrx.Next();
 		}
@@ -1052,17 +1052,17 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 	for (;;) {
 		recno = ndxndxx.GetRecno();
 		rc = ndxndx.Fetch(recno, fldndxlst);
-		rc = stricmp(fldndx1.GetChar(), relname);
+		rc = stricmp(fldndx1.GetCharPtr(), relname);
 		if (rc != 0)
 			break;
-		strcpy(ascdesc, fldndx4.GetChar());
-		ndx = new RIndex((relID)this, fldndx2.GetChar(), fldndx3.GetInt(), btree);
+		strcpy(ascdesc, fldndx4.GetCharPtr());
+		ndx = new RIndex((relID)this, fldndx2.GetCharPtr(), fldndx3.GetInt(), btree);
 		// scan atrlst[] to get RField ptrs for ndxFld array
 		for (j = 0; j < MAXKEY; j++) {
-			if (strlen(fldndxlst[j + 3]->GetChar()) == 0)
+			if (strlen(fldndxlst[j + 3]->GetCharPtr()) == 0)
 				break;
 			for (i = 0; i < relnFlds; i++) {
-				if (strcmp(relFldLst[i]->GetName(), fldndxlst[j + 4]->GetChar()) == 0) {
+				if (strcmp(relFldLst[i]->GetName(), fldndxlst[j + 4]->GetCharPtr()) == 0) {
 					type = (ascdesc[i] == 'd') ? MSKDESC : ASCENDING;
 					ndx->AddField(*relFldLst[i], type);
 					break;

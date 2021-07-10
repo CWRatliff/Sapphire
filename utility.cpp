@@ -21,7 +21,7 @@ int ItemBuild(char *dest, int nflds, RField *fldlst[], int ndxtype[]) {
 	p = dest;
 	for (int i = 0; i < nflds; i++) {
 		itype = ndxtype[i];
-		iaddr = fldlst[i]->GetChar();
+		iaddr = fldlst[i]->GetCharPtr();
 		*p++ = itype;
 		if (itype & STRING) {
 			strcpy(p, iaddr);
@@ -59,7 +59,7 @@ int ItemBuild(char *dest, int nflds, RField *fldlst[]) {
 	p = dest;
 	for (int i = 0; i < nflds; i++) {
 		itype = fldlst[i]->GetType();
-		iaddr = fldlst[i]->GetChar();
+		iaddr = fldlst[i]->GetCharPtr();
 		*p++ = itype;
 		if (itype & STRING) {
 			strcpy(p, iaddr);
