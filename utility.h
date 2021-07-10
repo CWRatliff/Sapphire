@@ -3,5 +3,8 @@ int ItemBuild(char *dest, int nflds, RField *fldlst[]);
 int ItemBuild(char *dest, int nflds, RField *fldlst[], int fldtype[]);
 int ItemDistribute(const char* src, RField *fldlst[]);
 void ItemPrint(char* src);
-int stricpy(char* d, char* s);
-int stricmp(char *s1, char *s2);
+#ifdef LINUX
+int stricpy(const char* d, char* s);
+int stricmp(const char *s1, const char *s2);
+int strnicmp(const char *s1, const char *s2, int len);
+#endif

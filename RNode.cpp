@@ -354,7 +354,8 @@ int RNode::NextKey(int keyno) {
 NODE RNode::NextNode() {
 	NODE nnNext;
 
-	if (nnNext = nodeRightSibling) {
+	nnNext = nodeRightSibling;
+	if (nnNext) {
 		Read(nodeRightSibling);
 		return nnNext;
 		}
@@ -370,7 +371,8 @@ int RNode::PrevKey(int keyno) {
 NODE RNode::PrevNode() {
 	NODE nnPrev;
 
-	if (nnPrev = nodeLeftSibling) {
+	nnPrev = nodeLeftSibling;
+	if (nnPrev) {
 		Read(nodeLeftSibling);
 		return nnPrev;
 		}

@@ -1,4 +1,4 @@
-
+#include "OS.h"
 #include <assert.h>
 #include <memory.h>
 #include <string.h>
@@ -175,8 +175,9 @@ void ItemPrint(char* src) {
 		idb = *p++;
 		}
 	}
+#ifdef LINUX
 //==========================================================
-int stricpy(char* dest, char* src) {
+int stricpy(const char* dest, char* src) {
 	int	cnt = 0;
 	int sch;
 
@@ -190,7 +191,7 @@ int stricpy(char* dest, char* src) {
 	return cnt;
 	}
 //==========================================================
-int stricmp(char *s1, char *s2) {
+int stricmp(const char *s1, const char *s2) {
 
 	while (1) {
 		char c1 = *s1++;
@@ -205,6 +206,21 @@ int stricmp(char *s1, char *s2) {
 		}
 	return 0;
 	}
+//==========================================================
+int strnicmp(const char *s1, const char *s2, int len) {
+	int diff;
+	while (len) {
+		char c1 = *s1++;
+		char c2 = *s2++;
+		diff = tolower(c1) - tolower(c2);
+		if (diff != 0) {
+			return (diff);
+		if (c1 == '\0' || c2 == '\0')
+			break;
+		}
+	return 0;
+	}
+#endif
 /*
 int ItemLength(const char *item) {
 

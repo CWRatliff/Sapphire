@@ -12,7 +12,6 @@
 #include "RNode.hpp"
 #include "RBtree.hpp"
 #include "RIndex.h"
-#include "ndbdefs.h"
 #include "utility.h"
 
 // Index record layout
@@ -354,7 +353,7 @@ int RIndex::Next() {
 		return (-1);
 	int rc = ndxBTree->MoveNext(&ndx_ID);
 	if (rc < 0)					// 210709
-		return (rc);			// 210709
+		return (-1);			// 210709
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went past the end of this keyno
 	res = prekey.KeyCompare(ndx_ID.ndxKey);
@@ -397,6 +396,8 @@ int RIndex::Prev() {
 	if (ndx_ID.ndxStatus == IEOF || ndx_ID.ndxStatus == UNPOSITIONED)
 		return (-1);
 	int rc = ndxBTree->MovePrevious(&ndx_ID);
+	if (rc < 0)
+		return (-1);
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went before the start of this keyno
 	res = prekey.KeyCompare(ndx_ID.ndxKey);

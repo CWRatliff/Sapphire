@@ -26,6 +26,7 @@ extern	errno_t	err;
 #ifdef LINUX
 #include <sys/types.h>
 #include <unistd.h>
+#include "utility.h"
 extern	int	err;
 #endif
 

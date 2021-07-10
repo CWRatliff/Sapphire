@@ -56,6 +56,9 @@ Sapphire - master object, does file based db ops, linked list to dbf's
 #include "RTable.h"
 #include "RDbf.h"
 #include "RSapphire.h"
+#ifdef LINUX
+#include "utility.h"
+#endif
 
 #ifdef MSDOS
 errno_t	error;
