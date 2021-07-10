@@ -61,7 +61,7 @@ Sapphire - master object, does file based db ops, linked list to dbf's
 #endif
 
 #ifdef MSDOS
-errno_t	error;
+errno_t	err;
 #endif
 
 Sapphire::Sapphire() {
@@ -210,5 +210,11 @@ RDbf*	Sapphire::DbCreateFile(const char *dbfname) {
 //==============================================================================
 // return system error number "errno"
 int Sapphire::DbGetErrno() {
-	return error;
+	\
+#ifdef MSDOS
+		return err;
+#endif
+#ifdef LINUX
+	return errno;
+#endif
 	}

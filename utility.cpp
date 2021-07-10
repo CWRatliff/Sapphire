@@ -177,7 +177,7 @@ void ItemPrint(char* src) {
 	}
 #ifdef LINUX
 //==========================================================
-int stricpy(const char* dest, char* src) {
+int stricpy(char* dest, const char* src) {
 	int	cnt = 0;
 	int sch;
 
@@ -209,9 +209,12 @@ int stricmp(const char *s1, const char *s2) {
 //==========================================================
 int strnicmp(const char *s1, const char *s2, int len) {
 	int diff;
+	char	c1;
+	char	c2;
+
 	while (len) {
-		char c1 = *s1++;
-		char c2 = *s2++;
+		c1 = *s1++;
+		c2 = *s2++;
 		diff = tolower(c1) - tolower(c2);
 		if (diff != 0) {
 			return (diff);

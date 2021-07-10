@@ -4,6 +4,7 @@
 // 180328 - SearchRecord - rc from Find stepped on by Fetch
 // 210707 - GetHighestIndex - fixed return codes from First() to '>='
 
+#include "OS.h"
 #include "dbdef.h"
 #include "RField.h"
 #include "RPage.hpp"
