@@ -1,5 +1,6 @@
 // 210707 - Compare greatly revised, KeyCompare(s) order of calling Compare reversed
 //			they were calling search key, then index key
+// 210710 - Added function GetKeyBody that strips recno
 
 #include "OS.h"
 #include <memory.h>
@@ -48,11 +49,19 @@ RKey::~RKey() {
 		delete [] keyStr;
 	}
 //==================================================================
+// return the key without recno
+void RKey::GetKeyBody(const RKey &orig) {
+
+	memcpy(keyStr, orig.keyStr, orig.keyLen - 5);
+	keyLen = orig.keyLen - 5;
+	keyStr[keyLen-1] = '\0';
+	}
+//==================================================================
 // return the first key component
 int RKey::GetKeyHead() {
 	int		component;
 
-	memcpy(&component, keyStr+1, sizeof(int));
+	memcpy(&component, keyStr + 1, sizeof(int));
 	return (component);
 	}
 //==================================================================
@@ -71,13 +80,13 @@ int	RKey::KeyAppend(RKey &otherKey) {
 	return 0;
 	}
 //==================================================================
+// RKey :: supplied key (otherkey)
 int RKey::KeyCompare(RKey &otherKey) {
-//	return (Compare(otherKey.keyStr));	//210705
 	return (Compare(keyStr, otherKey.keyStr));
 }
 //==================================================================
+// keystring :: RKey
 int RKey::KeyCompare(const char *keyString) {
-//	return (Compare(keyStr, keyString));	//210705
 	return (Compare(keyString, keyStr));
 }
 
@@ -88,10 +97,10 @@ int RKey::Compare(const char *ikey, const char *tkey) {
 // return	-1 if ikey < tkey
 //			0  if keys are equal
 //			+1 if ikey > tkey   
-	
-// if ikey == tkey but ikey has additional field(s) ikey > tkey, rc = 2
-// if ikey == tkey but tkey has additional field(s) ikey < tkey, rc = -2
 
+//N.B. index secondary key will always have one more subkey,
+//		the recno subfield, only test key will terminate cleanly
+// return -3 if two keys are mismatched for ndxno
 // TBD numeric data should be compared after converting to FP
 
 	char	idb;									// descriptor byte

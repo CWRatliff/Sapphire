@@ -30,8 +30,8 @@ class RIndex {
 		int		Find(RKey &key);
 		int		First();
 		int		Last();
-		int		Next();
-		int		Prev();
+		int		Next(int ndxtype = 1);
+		int		Prev(int ndxtype = 1);
 
 		int		GetCurrentKey(RKey* key);
 		RIndex*	GetIndexHandle(const char* ndxname);

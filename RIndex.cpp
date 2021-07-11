@@ -1,6 +1,9 @@
 // 210707 - Find() - reversed order of KeyCompare
 //			so test key is key terminator
 // 210709 - Next & Prev return 1 if new key != starting key
+// 210710 - added GetKeyBody to Next & Prev to avoid comparing recno's
+//		  - added ndxtype (Pri or Sec) to Next & Prev to distinguish
+//			existence of trailing recno
 
 #include <string.h>
 #include "dbdef.h"
@@ -27,10 +30,10 @@
 // |<--- key area -->|<-- data area -->|
 
 // Secondary index record layout
-// +-------+----+----+----+-------+-+-+
-// | ndxno | k0 | k1 |... | recno |0|0|
-// +-------+----+----+----+-------+-+-+
-// |<---------- key area ---------->|^- data area (empty, zero term)
+// +-------+----+----+----+-------+-+
+// | ndxno | k0 | k1 |... | recno |0|
+// +-------+----+----+----+-------+-+
+// |<---------- key area ---------->|
 
 // ndxno layout
 // +-----+---------+
@@ -344,11 +347,15 @@ Returns
 */
 //==============================================================
 // advance index one record
-int RIndex::Next() {
+int RIndex::Next(int ndxtype) {
 	RKey	prekey;
+	RKey	postkey;
 	int		res;
 
-	prekey = ndx_ID.ndxKey;
+	if (ndxtype == 0)			// 210719
+		prekey = ndx_ID.ndxKey;
+	else
+		prekey.GetKeyBody(ndx_ID.ndxKey);
 	if (ndx_ID.ndxStatus == IEOF || ndx_ID.ndxStatus == UNPOSITIONED)
 		return (-1);
 	int rc = ndxBTree->MoveNext(&ndx_ID);
@@ -356,11 +363,15 @@ int RIndex::Next() {
 		return (-1);			// 210709
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went past the end of this keyno
-	res = prekey.KeyCompare(ndx_ID.ndxKey);
+	if (ndxtype == 0)
+		res = prekey.KeyCompare(ndx_ID.ndxKey);
+	else {
+		postkey.GetKeyBody(ndx_ID.ndxKey);
+		res = prekey.KeyCompare(postkey);
+		}
 	if (res < 0)
 		return (1);
 	return (0);
-
 	}
 //===========================================================================
 /*
@@ -388,11 +399,15 @@ Returns
 */
 //==============================================================
 // back up one record
-int RIndex::Prev() {
+int RIndex::Prev(int ndxtype) {
 	RKey	prekey;
+	RKey	postkey;
 	int		res;
 
-	prekey = ndx_ID.ndxKey;		//210709
+	if (ndxtype == 0)			// 210719
+		prekey = ndx_ID.ndxKey;
+	else
+		prekey.GetKeyBody(ndx_ID.ndxKey);
 	if (ndx_ID.ndxStatus == IEOF || ndx_ID.ndxStatus == UNPOSITIONED)
 		return (-1);
 	int rc = ndxBTree->MovePrevious(&ndx_ID);
@@ -400,7 +415,12 @@ int RIndex::Prev() {
 		return (-1);
 	if (ndx_ID.ndxKey.GetKeyHead() != ndxNo)
 		return -1;							// we went before the start of this keyno
-	res = prekey.KeyCompare(ndx_ID.ndxKey);
+	if (ndxtype == 0)
+		res = prekey.KeyCompare(ndx_ID.ndxKey);
+	else {
+		postkey.GetKeyBody(ndx_ID.ndxKey);
+		res = prekey.KeyCompare(postkey);
+	}
 	if (res < 0)
 		return (1);
 	return (0);

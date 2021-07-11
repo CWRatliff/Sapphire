@@ -550,9 +550,12 @@ int	RTable::DbNextRecord(RIndex* ndx) {
 	int		rc;
 	int		res;
 
-	if (ndx == NULL)
+	if (ndx == NULL) {
 		ndx = relDataNdx;
-	res = ndx->Next();
+		res = ndx->Next(0);		// primary index
+		}
+	else
+		res = ndx->Next(1);		// secondary index
 	if (res < 0)
 		return -1;
 
@@ -1159,7 +1162,7 @@ int RTable::GetHighestIndex(RIndex& ndxrel, RIndex& ndxndx) {
 		if (rc >= 0) {
 			nhighno = fldndx3.GetInt();		// look at 'relndxno'
 			for (;;) {						// cycle thru sysndx
-				rc = ndxndx.Next();
+				rc = ndxndx.Next(0);
 				if (rc < 0)
 					break;
 				ndxndx.Fetch(fldndxlst);
@@ -1174,7 +1177,7 @@ int RTable::GetHighestIndex(RIndex& ndxrel, RIndex& ndxndx) {
 		ndxrel.Fetch(fldndxlst);
 		rhighno = fldrel3.GetInt();// look at 'relndxno'
 		for (;;) {							// cycle thru sysndx
-			rc = ndxrel.Next();
+			rc = ndxrel.Next(0);
 			if (rc < 0)
 				break;
 			ndxrel.Fetch(fldndxlst);

@@ -14,6 +14,7 @@ class	RKey {
 					
 		int		GetKeyLen() {return keyLen;}
 		char*	GetKeyStr() {return keyStr;}
+		void	GetKeyBody(const RKey &orig);
 		int		GetKeyHead();
 		int		GetKeyTail();
 		int		KeyAppend(RKey &otherKey);
