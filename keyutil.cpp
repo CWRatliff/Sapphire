@@ -4,6 +4,8 @@
 //==================================================================
 // N.B. mostly duplicate code as class RKey - duplicated to avoid need for RDbase user
 //	to need to include class RKey
+// keyutil function allows "-" to indicate descending key segment
+//      i.e, "s-i" for s-string, descending integer
 // template string:
 //		s => string, 63 char max (arbitrary)
 //		u => caseless string
@@ -27,47 +29,51 @@ int MakeSearchKey(char* key, const char *tmplte, ...) {
  	va_start(arg, tmplte);
 	while (*tmplte) {
 		type = *tmplte++;
-		if (type == 's' || type == 'u' || type == 'n') {
-			data = (char *)va_arg(arg, char *);
-			len = strlen(data) + 1;
-			if (len > 63) {
-				return (-1);				// error, too long
+		if (type == '-')
+			descmask = MSKDESC;
+		else {
+			if (type == 's' || type == 'u' || type == 'n') {
+				data = (char *)va_arg(arg, char *);
+				len = strlen(data) + 1;
+				if (len > 63) {
+					return (-1);				// error, too long
 				}
-			if (type == 's')
-				*key = STRING;
-			else if (type == 'u')
-				*key = STRNOCASE;
+				if (type == 's')
+					*key = STRING;
+				else if (type == 'u')
+					*key = STRNOCASE;
+				else
+					*key = STRNUMERIC;
+			}
+			else if (type == 'f') {				// floating point
+				fdata = (float)va_arg(arg, double);
+				data = (char *)&fdata;
+				len = sizeof(float);
+				*key = FP;
+			}
+			else if (type == 'd') {				// double precision
+				ddata = va_arg(arg, double);
+				data = (char *)&ddata;
+				len = sizeof(double);
+				*key = DP;
+			}
+			else if (type == 'i') {				// integer
+				idata = va_arg(arg, int);
+				data = (char *)&idata;
+				len = sizeof(int);
+				*key = INT;
+			}
 			else
-				*key = STRNUMERIC;
-			}
-		else if (type == 'f') {				// floating point
-			fdata = (float)va_arg(arg, double);
-			data = (char *)&fdata;
-			len = sizeof(float);
-			*key = FP;
-			}
-		else if (type == 'd') {				// double precision
-			ddata = va_arg(arg, double);
-			data = (char *)&ddata;
-			len = sizeof(double);
-			*key = DP;
-			}
-		else if (type == 'i') {				// integer
-			idata = va_arg(arg, int);
-			data = (char *)&idata;
-			len = sizeof(int);
-			*key = INT;
-			}
-		else
-			return 0;
+				return 0;
 
-		*key = *key | descmask;				// descending?
-		descmask = 0;
-		key++;
-		memcpy(key, data, len);
-		key += len;
+			*key = *key | descmask;				// descending?
+			descmask = 0;
+			key++;
+			memcpy(key, data, len);
+			key += len;
 			keylen += len + 1;
 		}
+	}
 	va_end(arg);
 	
 	*key = 0;								// key terminator
