@@ -255,16 +255,18 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
                    
 	va_list arg;
 	int		descmask = 0;
-	int		len;
+	int		len = 0;
 	int		type;
 	int		idata;
 	float	fdata;
 	double	ddata;
-	char	*data;
+	char*	data;
 	char	temp[KEYMAX];
 	char	*key = &temp[0];
  
 	keyLen = 0;
+	data = (char *)"";
+	len = 0;
  	va_start(arg, tmplte);
 	while (*tmplte) {
 		type = *tmplte++;
@@ -306,7 +308,8 @@ int RKey::MakeSearchKey(const char *tmplte, ...) {
 			*key = *key | descmask;				// descending?
 			descmask = 0;
 			key++;
-			memcpy(key, data, len);
+			if (data != NULL && len > 0)
+				memcpy(key, data, len);
 			key += len;
 			keyLen += len + 1;
 			}

@@ -157,29 +157,7 @@ int	RIndex::Fetch(int recno, RField* fldlst[]) {
 		}
 	return (0);
 	}
-//===========================================================================
-/*
-DbSearchRecord - Search the current data relation index
-
-int	DbSearchRecord(relID relid, ndxID ndx, const char* key)
-
-Provides direct access to a record by its index key.  Search keys must
-be constructed by DbMakeSearchKey.
-
-return -1 if error
-0 if key found in index (possibly fewer components)
-1 if supplied key < index key
-
-Parameters
-key - a user supplied character string containing a "search key" generally
-constructed vi the utility function MakeSearchKey q.v.
-
-Returns
--1 - error
-
-See also
-MakeSearchKey
-*///==============================================================
+//==============================================================
 // Search for a key (or partial key)
 // rc = -1: error
 // rc = 0: exact match (might have fewer components)
@@ -226,22 +204,7 @@ int RIndex::Find(RKey &key) {
 //		rc = 1;
 	return (rc);
 	}
-//===========================================================================
-/*
-DbFirstRecord - Position to the first record (logical top of relation)
-
-int	DbFirstRecord(relID relid, ndxID ndxid)
-
-Move the record pointer to the first record in the specified index. Subsequent
-operations will then be oriented to this data record, e.g. DbGet and DbSet Fields,
-DbAddRecord, DbUpdateRecord, DbDeleteRecord.
-
-Using zero as the index will use the relDataNdx which is
-the primary index for tables.
-
-Returns
--1 - error
-*///==============================================================
+//==============================================================
 // position of smallest key in an index set
 // rc of 0 expected, BETWEEN, since recno not part of search key
 int RIndex::First() {
@@ -298,18 +261,7 @@ int RIndex::GetRecno() {
 	recno = ndx_ID.ndxKey.GetKeyTail();
 	return (recno);
 	}
-//===========================================================================
-/*
-DbLastRecord - Last record (logical bottom)
-
-Move the record pointer to the last record in the specified index.
-
-Using zero as the index will use the relDataNdx which is
-the primary index for tables.
-
-Returns
--1 - error
-*///==============================================================
+//==============================================================
 // position to "first" in next larger ndxNo and then backup one item
 int RIndex::Last() {
 	RKey	ndxkey;
@@ -324,29 +276,12 @@ int RIndex::Last() {
 		}
 	return (rc);
 	}
-//===========================================================================
-/*
-DbNextRecord
 
-Description	- Next Record
-Moves to the record immediately following the current record
-(according to the specified index).  The next record usually depends
-on which index is specified.
-
-Use this function to sequentially step through a data relation in the record
-order determined by the specified index. The function returns -1 when there
-are no more records (end-of-relation.)
-
-Using zero as the index will use the relDataNdx which is
-the primary index for tables.
-
-Returns
--1 - error
-0  - new key == old key
-1  - new key != old key
-*/
 //==============================================================
 // advance index one record
+// return value -1 indicates index was not prepositioned or MoveNext() went beyond end-of-index
+//   0 -> still on matching key
+//   1 -> key does not match starting search key
 int RIndex::Next(int ndxtype) {
 	RKey	prekey;
 	RKey	postkey;
@@ -373,32 +308,9 @@ int RIndex::Next(int ndxtype) {
 		return (1);
 	return (0);
 	}
-//===========================================================================
-/*
-DbPrevRecord
-
-Description	- Previous Record
-
-Moves to the record just before the current record
-(according to the specified index.)  The previous record usually depends
-on which index is selected.
-
-If there is no previous record for the specified index (i.e. at the
-bottom of the data relation) the function returns -1.
-
-Use this function to back through a relation in sequential record order
-(as determined by the specified index).
-
-Using zero as the index will use the relDataNdx which is
-the primary index for tables.
-
-Returns
--1 - error
-0  - new key == old key
-1  - new key != old key
-*/
 //==============================================================
 // back up one record
+// return value -1 indicates index was not prepositioned or MoveNext() went beyond end-of-index
 int RIndex::Prev(int ndxtype) {
 	RKey	prekey;
 	RKey	postkey;

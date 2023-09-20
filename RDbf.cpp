@@ -1,5 +1,6 @@
 // 180302 windows/dos errno put into create
 // 180304 closer delete of dbfname to errno()
+// 230919 LINUX 'err' eliminated
 
 #include "OS.h"
 #include <stdio.h>
@@ -27,17 +28,19 @@ extern	errno_t	err;
 #include <sys/types.h>
 #include <unistd.h>
 #include "utility.h"
-extern	int	err;
+//extern	int	err;
 #endif
 
 //=============================================================================
 RDbf::RDbf(const char* dbfname) {
+	dbfFd = 0;
 	int len = strlen(dbfname);
 	dbfName = new char[len+1];
 	strcpy(dbfName, dbfname);
 	dbfLink = NULL;
 	dbfRelRoot = NULL;
 	dbfBtree = NULL;
+	dbfAvail = NULL;
 	}
 //=============================================================================
 RDbf::~RDbf() {
@@ -83,13 +86,13 @@ int	RDbf::Create(const char *dbfname) {
 #ifdef LINUX
 	errno = 0;
 	dbfFd = open(dosname, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
-	err = errno;
+	//err = errno;
 #endif
 
 	delete [] dosname;
-	if (err > 0)
-		return 0;
-	if (dbfFd) {
+//	if (err > 0)
+	if (dbfFd > 0) {
+
 #ifdef MSDOS
 		_write(dbfFd, zeros, NODESIZE);
 #endif
@@ -98,9 +101,8 @@ int	RDbf::Create(const char *dbfname) {
 #endif
 		dbfAvail = 0;
 		dbfBtree = new RBtree(dbfFd, dbfAvail);
-		return dbfFd;
 		}
-	return 0; // couldn't open
+	return dbfFd;
 	}
 //=============================================================================
 // return dos file number if AOK, else NULL (errno is set)
@@ -122,12 +124,10 @@ int RDbf::Login(const char* dbfname) {
 #ifdef LINUX
 	errno = 0;
 	dbfFd = open(dosname, O_RDWR, S_IRUSR | S_IWUSR);
-	err = errno;
+//	err = errno;
 #endif
 	delete[] dosname;
-	if (err > 0)
-		return 0;
-	if (dbfFd) {
+	if (dbfFd > 0) {
 #ifdef MSDOS
 		_lseek(dbfFd, 0L, SEEK_SET);
 		_read(dbfFd, &dbfAvail, sizeof(NODE));

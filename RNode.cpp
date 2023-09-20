@@ -3,6 +3,7 @@
 //			problem with combo of huge and tiny key:data 
 // added errno check after I/O
 // 180612 - DeleteNode & NewNode reuse free nodes
+// 230919 - rm 'err' extern for linux
 
 #include "OS.h"
 #include <string.h>
@@ -23,7 +24,7 @@ extern	errno_t	err;
 #ifdef LINUX
 #include <sys/types.h>
 #include <unistd.h>
-extern	int	err;
+//extern	int	err;
 #endif
 
 /* Symbolic index node format
@@ -293,26 +294,26 @@ NODE RNode::NewNode() {
 	if (nodeAvail) {								// if allocated free space is available
 		_lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		_read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		_lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		_write(nodeFd, &avail, sizeof(NODE));
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		nodeCurr = nodeAvail;
 		nodeAvail = avail;
 	}
 	else {
 		rawpos = _lseek(nodeFd, 0L, SEEK_END);		// EOF
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		_write(nodeFd, &nodeP0, NODESIZE);
 		_get_errno(&err);
-		assert(errno == 0);
+		assert(err == 0);
 		nodeCurr = rawpos / NODESIZE;				// compute node number
 		}
 #endif
@@ -538,10 +539,10 @@ int RNode::Read(NODE node) {
 	_set_errno(0);
 	_lseek(nodeFd, node*NODESIZE, SEEK_SET);
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 	bytes = _read(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 #endif
 #ifdef LINUX
 	errno = 0;
@@ -564,10 +565,10 @@ int RNode::Write() {
 	_set_errno(0);
 	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 	_write(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 #endif
 #ifdef LINUX
 	errno = 0;

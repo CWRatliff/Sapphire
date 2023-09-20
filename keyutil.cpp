@@ -10,7 +10,7 @@
 //		s => string, 63 char max (arbitrary)
 //		u => caseless string
 //		n => numeric string
-//		f =-> float
+//		f => float
 //		d => double float
 //		i => integer
 

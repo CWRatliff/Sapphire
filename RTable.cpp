@@ -3,6 +3,7 @@
 // 180302 - offsets in Store set
 // 180328 - SearchRecord - rc from Find stepped on by Fetch
 // 210707 - GetHighestIndex - fixed return codes from First() to '>='
+// 211016 - revised DbNextRecord & DbPrevRecord to be consistent
 
 #include "OS.h"
 #include "dbdef.h"
@@ -365,6 +366,22 @@ double RTable::DbGetDouble(const char* fldname, int offset) {
 	memcpy(&data, fld->GetDataAddr(), sizeof(double));
 	return data;
 	}
+//===========================================================================
+/*
+DbFirstRecord - Position to the first record (logical top of relation)
+
+int	DbFirstRecord(relID relid, ndxID ndxid)
+
+Move the record pointer to the first record in the specified index. Subsequent
+operations will then be oriented to this data record, e.g. DbGet and DbSet Fields,
+DbAddRecord, DbUpdateRecord, DbDeleteRecord.
+
+Using zero as the index will use the relDataNdx which is
+the primary index for tables.
+
+Returns
+-1 - error
+*/
 //============================================================================
 int	RTable::DbFirstRecord(RIndex* ndx) {
 	int		rc;
@@ -412,6 +429,18 @@ RIndex* RTable::DbGetIndexObject(const char* ndxname) {
 	ndx = relNdxRoot->GetIndexHandle(ndxname);
 	return ndx;
 	}
+//===========================================================================
+/*
+DbLastRecord - Last record (logical bottom)
+
+Move the record pointer to the last record in the specified index.
+
+Using zero as the index will use the relDataNdx which is
+the primary index for tables.
+
+Returns
+-1 - error
+*/
 //============================================================================
 int	RTable::DbLastRecord(RIndex* ndx) {
 	int		rc;
@@ -545,13 +574,34 @@ RIndex* RTable::DbMakeIndex(const char* ndxname, const char *tmplte, RField* fld
 	AddIndex(ndx);		// add new index to linked list of indexes
 	return ndx;
 	}
+//===========================================================================
+/*
+DbNextRecord
+
+Description	- Next Record
+Moves to the record immediately following the current record
+(according to the specified index).  The next record usually depends
+on which index is specified.
+
+Use this function to sequentially step through a data relation in the record
+order determined by the specified index. The function returns -1 when there
+are no more records (end-of-relation.)
+
+Using zero as the index will use the relDataNdx which is
+the primary index for tables.
+
+Returns
+-1 - error
+0  - new key == old key
+1  - new key != old key
+*/
 //============================================================================
 int	RTable::DbNextRecord(RIndex* ndx) {
 	int		rc;
 	int		res;
 
 	if (ndx == NULL) {
-		ndx = relDataNdx;
+		ndx = relDataNdx;		// use default
 		res = ndx->Next(0);		// primary index
 		}
 	else
@@ -559,32 +609,57 @@ int	RTable::DbNextRecord(RIndex* ndx) {
 	if (res < 0)
 		return -1;
 
+	if ((RTable*)(ndx->GetParent()) != this)	// virtually impossible to happen
+		return -1;
+
 	relRecNo = ndx->GetRecno();
 	rc = relDataNdx->Fetch(relRecNo, relFldLst);
 	if (rc < 0)
 		return -1;
-	else {
-		if ((RTable*)(ndx->GetParent()) != this)
-				return -1;
-		}
+
 	relRecStatus = VIRGIN;
 	relNdxRoot->PresetIndexes(relRecNo);
-	// relCurNdx = ndx?? 161122
 	return res;
 	}
+//===========================================================================
+/*
+DbPrevRecord
+
+Description	- Previous Record
+
+Moves to the record just before the current record
+(according to the specified index.)  The previous record usually depends
+on which index is selected.
+
+If there is no previous record for the specified index (i.e. at the
+bottom of the data relation) the function returns -1.
+
+Use this function to back through a relation in sequential record order
+(as determined by the specified index).
+
+Using zero as the index will use the relDataNdx which is
+the primary index for tables.
+
+Returns
+-1 - error
+0  - new key == old key
+1  - new key != old key
+*/
 //============================================================================
 int	RTable::DbPrevRecord(RIndex* ndx) {
 	int		rc;
 	int		res;
 
-	if (ndx == NULL)
+	if (ndx == NULL) {
 		ndx = relDataNdx;		// use default
-	else {
-		if ((RTable*)(ndx->GetParent()) != this)
-			return -1;
-		}
-	res = ndx->Prev();
+		res = ndx->Prev(0);		// primary index
+	}
+	else
+		res = ndx->Prev(1);		// secondary index
 	if (res < 0)
+		return -1;
+
+	if ((RTable*)(ndx->GetParent()) != this)
 		return -1;
 
 	relRecNo = ndx->GetRecno();
@@ -614,7 +689,7 @@ Parameters
 relid - the handle to an open relation
 ndxid - index handle
 key - a user supplied character string containing a "search key" generally
-constructed vi the utility function MakeSearchKey q.v.
+constructed by the utility function MakeSearchKey q.v.
 
 Returns
 -1 - error
