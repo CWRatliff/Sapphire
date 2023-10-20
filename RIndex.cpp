@@ -67,7 +67,7 @@ RIndex::~RIndex() {
 //==============================================================
 // Start new index
 //RIndex::RIndex(char* ndxname, int ndxno, RBtree *ndxbtree) {
-RIndex::RIndex(relID rel, const char* ndxname, int ndxno, RBtree *ndxbtree) {
+RIndex::RIndex(const char* ndxname, int ndxno, RBtree *ndxbtree) {
 	int	len = strlen(ndxname) + 1;
 	ndxName = new char[len];
 	strcpy(ndxName,ndxname);
@@ -79,7 +79,6 @@ RIndex::RIndex(relID rel, const char* ndxname, int ndxno, RBtree *ndxbtree) {
 	ndxType[0] = INT;
 	ndxFldCnt = 0;
 	ndxLink = NULL;
-	ndxParent = rel;
 	ndx_ID.ndxStatus = UNPOSITIONED;
 	}
 //==============================================================

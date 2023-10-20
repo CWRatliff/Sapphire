@@ -16,7 +16,6 @@ class RTable {
 		RIndex*	relNdxRoot;			// linked list of indexes
 		RField** relFldLst;			// array of Field object ptrs
 		RBtree*	relNdx;				// Btree associated
-		dbfID	relParent;			// dbf than 'owns' table
 		RTable*	relLink;			// linked list pointer
 
 	public:
@@ -24,7 +23,7 @@ class RTable {
 		~RTable();
 
 		int		MakeRelation(RBtree* btree, const char *relname, RField *fldlst[]);
-		int		OpenRelation(dbfID dbf, RBtree* btree, const char* relname);
+		int		OpenRelation(RBtree* btree, const char* relname);
 		int		DropRelation(RBtree* btree, const char *relname);
 
 		int		DbAddRecord();
@@ -57,7 +56,6 @@ class RTable {
 		RIndex*	DbGetIndexObject(const char* ndxname);
 		int		SetLink(RTable* rel);
 		RTable*	GetLink() {return (relLink);}
-		relID	GetParent() {return (relParent);}
 		char*	GetRelname() {return (relName);}
 		int		GetRecno();
 

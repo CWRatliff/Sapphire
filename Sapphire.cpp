@@ -2,18 +2,18 @@
 +-------------------+
 | Sapphire Database |
 +-------------------+
-	|              ^
-	v              |
+	|
+	v
 	+----------------------+        +-----------+
 	| Database File (.dbf) |------->| ... .dbfs |-----> NULL
 	+----------------------+        +-----------+
-		|           |     ^
-		v			v     |
+		|           |    
+		v			v    
 		+-------+   +-------+        +------------+
 		| Btree |<--| Table |------->| ... tables |-----> NULL
 		+-------+   +-------+        +------------+
-                       |   ^
-					   v   |
+                       |   
+					   v   
 				       +-------+        +-------------+
 					   | Index |------->| ... indexes |-----> NULL
 					   +-------+        +-------------+
@@ -200,19 +200,19 @@ RDbf*	Sapphire::DbCreateFile(const char *dbfname) {
 	if (rc == 0) {
 		delete dbf;
 		return (NULL);
-	}
+		}
 	dbf->SetLink((RDbf*)dbDbfRoot);			// add to linked list of dbf's
 	dbDbfRoot = dbf;
 
 	return (dbf);
-}
+	}
 
 //==============================================================================
 // return system error number "errno"
 int Sapphire::DbGetErrno() {
-	\
+
 #ifdef MSDOS
-		return err;
+	return err;
 #endif
 #ifdef LINUX
 	return errno;

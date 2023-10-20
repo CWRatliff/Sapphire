@@ -12,12 +12,11 @@ class RIndex {
 		int		ndxType[MAXKEY+1];	// array of field:key types
 		RBtree*	ndxBTree;
 		RIndex*	ndxLink;			// linked list pointer
-		relID	ndxParent;			// handle of relation that 'owns' this index
 		NDX_ID	ndx_ID;
 
 	public:
 		RIndex();
-		RIndex(relID rel, const char* ndxname, int ndxno, RBtree *ndxbtree);
+		RIndex(const char* ndxname, int ndxno, RBtree *ndxbtree);
 		~RIndex();
 
 		int		AddField(RField& fld, int desc);
@@ -40,7 +39,6 @@ class RIndex {
 		int		GetFieldCount() {return (ndxFldCnt);}
 		RIndex* GetLink() {return (ndxLink);}
 		int		GetRecno();
-		relID	GetParent() {return (ndxParent);}
 		int		GetStatus() {return(ndx_ID.ndxStatus);}
 
 		int		PresetIndexes(int recno);

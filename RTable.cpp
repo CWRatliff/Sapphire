@@ -23,7 +23,7 @@
 
 // sysrel
 #define	NFLDSREL	3
-RField fldrel1("relname", STRNOCASE, MAXNAME+1);
+RField fldrel1("relname",  STRNOCASE, MAXNAME+1);
 RField fldrel2("relnflds", INT, sizeof(int));
 RField fldrel3("relndxno", INT, sizeof(int));
 RField* fldrellst[] = {&fldrel1, &fldrel2, &fldrel3, NULL};
@@ -33,13 +33,13 @@ RField* fldrellst[] = {&fldrel1, &fldrel2, &fldrel3, NULL};
 RField fldfld1("relname", STRNOCASE, MAXNAME+1);
 RField fldfld2("fldname", STRNOCASE, MAXNAME+1);
 RField fldfld3("fldtype", INT, sizeof(int));
-RField fldfld4("fldlen", INT, sizeof(int));
+RField fldfld4("fldlen",  INT, sizeof(int));
 RField* fldfldlst[] = {&fldfld1, &fldfld2, &fldfld3, &fldfld4, NULL};
 
 // sysndx
 #define	NFLDSNDX	9
-RField fldndx1("relname", STRNOCASE, MAXNAME+1);
-RField fldndx2("ndxname", STRNOCASE, MAXNAME+1);
+RField fldndx1("relname",  STRNOCASE, MAXNAME+1);
+RField fldndx2("ndxname",  STRNOCASE, MAXNAME+1);
 RField fldndx3("relndxno", INT, sizeof(int));
 RField fldndx4("fldasdec", STRNOCASE, MAXKEY+1);
 RField fldndx5("fldname1", STRNOCASE, MAXNAME+1);
@@ -61,7 +61,12 @@ RTable::RTable() {
 	relName = NULL;
 	relnFlds = 0;
 	relRecNo = 0;
+	relNdxNo = 0;
+	relRecStatus = 0;
 	relOwner = FALSE;
+	relCurNdx = NULL;
+	relDataNdx = NULL;
+	relNdx = NULL;
 	}
 //============================================================================
 RTable::~RTable() {
@@ -222,8 +227,8 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 	RKey	keyw;			// work key;
 	RIndex*	ndx;
 
-	RIndex	ndxndx((relID)this, "sysndx", SYSNDX, relNdx);
-	RIndex	ndxndxx((relID)this, "sysndx", SYSNDXX, relNdx);
+	RIndex	ndxndx("sysndx", SYSNDX, relNdx);
+	RIndex	ndxndxx("sysndx", SYSNDXX, relNdx);
 	ndx = NULL;
 
 	keyw.MakeSearchKey("s", relName);
@@ -250,7 +255,7 @@ int RTable::DbDeleteIndex(const char* ndxname) {
 	// AKA - delete all index entries with this ndxrecno
 
 	ndxrecno = fldndx3.GetInt();
-	ndx = new RIndex((relID)this, "", ndxrecno, relNdx);
+	ndx = new RIndex("", ndxrecno, relNdx);
 	rc = ndx->First();
 	while (rc >= 0) {
 		ndx->Delete();
@@ -388,10 +393,7 @@ int	RTable::DbFirstRecord(RIndex* ndx) {
 
 	if (ndx == NULL)
 		ndx = relDataNdx;		// use default
-	else {
-		if ((RTable*)(ndx->GetParent()) != this)
-			return -1;
-		}
+
 	rc = ndx->First();
 	if (rc < 0)
 		return -1;
@@ -447,10 +449,7 @@ int	RTable::DbLastRecord(RIndex* ndx) {
 
 	if (ndx == NULL)
 		ndx = relDataNdx;		// use default
-	else {
-		if ((RTable*)(ndx->GetParent()) != this)
-			return -1;
-		}
+
 	rc = ndx->Last();
 	if (rc < 0)
 		return -1;
@@ -504,9 +503,9 @@ RIndex* RTable::DbMakeIndex(const char* ndxname, const char *tmplte, RField* fld
 	int		type;
 	char*	fldname;
 
-	RIndex	ndxrel((relID)this, "sysrel", SYSREL, relNdx);
-	RIndex	ndxndx((relID)this, "sysndx", SYSNDX, relNdx);
-	RIndex	ndxndxx((relID)this, "sysndx", SYSNDXX, relNdx);
+	RIndex	ndxrel("sysrel", SYSREL, relNdx);
+	RIndex	ndxndx("sysndx", SYSNDX, relNdx);
+	RIndex	ndxndxx("sysndx", SYSNDXX, relNdx);
 
 	wkey.MakeSearchKey("s", relName);
 	rc = ndxndxx.Find(wkey);
@@ -527,7 +526,7 @@ RIndex* RTable::DbMakeIndex(const char* ndxname, const char *tmplte, RField* fld
 	fldndx8.SetData("");
 	fldndx9.SetData("");					// preset fields to empty
 
- 	ndx = new RIndex((relID)this, ndxname, ndxno, relNdx);
+ 	ndx = new RIndex(ndxname, ndxno, relNdx);
 	// process 'a'/'d' template
 	fldndx4.SetData(tmplte);
 	while (*tmplte) {
@@ -609,9 +608,6 @@ int	RTable::DbNextRecord(RIndex* ndx) {
 	if (res < 0)
 		return -1;
 
-	if ((RTable*)(ndx->GetParent()) != this)	// virtually impossible to happen
-		return -1;
-
 	relRecNo = ndx->GetRecno();
 	rc = relDataNdx->Fetch(relRecNo, relFldLst);
 	if (rc < 0)
@@ -659,9 +655,6 @@ int	RTable::DbPrevRecord(RIndex* ndx) {
 	if (res < 0)
 		return -1;
 
-	if ((RTable*)(ndx->GetParent()) != this)
-		return -1;
-
 	relRecNo = ndx->GetRecno();
 	rc = relDataNdx->Fetch(relRecNo, relFldLst);
 	if (rc < 0)
@@ -704,8 +697,7 @@ int RTable::DbSearchRecord(RIndex* ndx, const char* key) {
 	if (ndx == NULL)				// default
 //		ndx = relDataNdx;			// would need recno
 		return (-1);				// dis-allow primary index
-	if ((RTable*)(ndx->GetParent()) != this)
-		return -1;
+
 	skey.SetKey(key);
 	rc = ndx->Find(skey);			// 0 if exact (possibly limited) match
 	if (rc < 0)
@@ -827,12 +819,12 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 	RKey	keyk;			// index key
 	RIndex*	ndx;
 
-	RIndex	ndxrel((relID)this, "sysrel", SYSREL, btree);
-	RIndex	ndxrelx((relID)this, "sysrel", SYSRELX, btree);
-	RIndex	ndxatr((relID)this, "sysatr", SYSFLD, btree);
-	RIndex	ndxatrx((relID)this, "sysatr", SYSFLDX, btree);
-	RIndex	ndxndx((relID)this, "sysndx", SYSNDX, btree);
-	RIndex	ndxndxx((relID)this, "sysndx", SYSNDXX, btree);
+	RIndex	ndxrel ("sysrel", SYSREL,  btree);
+	RIndex	ndxrelx("sysrel", SYSRELX, btree);
+	RIndex	ndxatr ("sysatr", SYSFLD,  btree);
+	RIndex	ndxatrx("sysatr", SYSFLDX, btree);
+	RIndex	ndxndx ("sysndx", SYSNDX,  btree);
+	RIndex	ndxndxx("sysndx", SYSNDXX, btree);
 
 	keyw.MakeSearchKey("s", relname);
 
@@ -847,7 +839,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 		rc = stricmp(fldndx1.GetCharPtr(), relname);
 		if (rc == 0) {
 			ndxrecno = fldndx3.GetInt();
-			ndx = new RIndex((relID)this, "", ndxrecno, btree);
+			ndx = new RIndex("", ndxrecno, btree);
 			rc = ndx->First();
 			while (rc >= 0) {
 				ndx->Delete();
@@ -868,7 +860,7 @@ int RTable::DropRelation(RBtree* btree, const char* relname) {
 		rc = stricmp(fldrel1.GetCharPtr(), relname);
 		if (rc == 0) {
 			ndxrecno = fldrel3.GetInt();
-			ndx = new RIndex((relID)this, "", ndxrecno, btree);
+			ndx = new RIndex("", ndxrecno, btree);
 			rc = ndx->First();
 			while (rc >= 0) {
 				ndx->Delete();
@@ -943,28 +935,28 @@ int	RTable::MakeRelation(RBtree* btree, const char *relname, RField *fldlst[]) {
 	int		ndxno = USERNDX;
 	int		rc;
 
-	RIndex	ndxrel((relID)this, "sysrel", SYSREL, btree);
-	RIndex	ndxrelx((relID)this, "sysrel", SYSRELX, btree);
-	RIndex	ndxatr((relID)this, "sysatr", SYSFLD, btree);
-	RIndex	ndxatrx((relID)this, "sysatr", SYSFLDX, btree);
-	RIndex	ndxndx((relID)this, "sysndx", SYSNDX, btree);
-	RIndex	ndxndxx((relID)this, "sysndx", SYSNDXX, btree);
+	RIndex	ndxrel("sysrel",  SYSREL,  btree);
+	RIndex	ndxrelx("sysrel", SYSRELX, btree);
+	RIndex	ndxatr("sysatr",  SYSFLD,  btree);
+	RIndex	ndxatrx("sysatr", SYSFLDX, btree);
+	RIndex	ndxndx("sysndx",  SYSNDX,  btree);
+	RIndex	ndxndxx("sysndx", SYSNDXX, btree);
 
 	// see if relation already exists
 	wkey.MakeSearchKey("s", relname);
 	rc = ndxrelx.Find(wkey);
-	if (rc == 0)							// 1609111
-		return -1;							// duplicate name
+	if (rc == 0)
+		return -1;								// duplicate name
 
-											// get new ndx # for new table
+												// get new ndx # for new table
 	ndxno = GetHighestIndex(ndxrel, ndxndx) + 1;
 
 	// make sysrel data record
-	recno = ndxrel.GetLastRecNo() + 1;		// get existing highest record number
-	fldrel1.SetData(relname);
-	fldrel2.SetData(3);
-	fldrel3.SetData(ndxno);
-	ItemBuild(str, NFLDSREL, fldrellst);
+	recno = ndxrel.GetLastRecNo() + 1;			// get existing highest record number
+	fldrel1.SetData(relname);					// sysrel for "relname"
+	fldrel2.SetData(NFLDSREL);					// no of fields (3)
+	fldrel3.SetData(ndxno);						// index # (sysatr)
+	ItemBuild(str, NFLDSREL, fldrellst);		// build sysrel data item
 	data.SetData(str);
 	ndxrel.WriteData(data, recno);
 
@@ -975,10 +967,10 @@ int	RTable::MakeRelation(RBtree* btree, const char *relname, RField *fldlst[]) {
 	// make sysatr data/index records
 	recno = ndxatr.GetLastRecNo() + 1;
 	for (i = 0; fldlst[i]; i++) {
-		fldfld1.SetData(relname);
-		fldfld2.SetData(fldlst[i]->GetName());
-		fldfld3.SetData(fldlst[i]->GetType());
-		fldfld4.SetData(fldlst[i]->GetLen());
+		fldfld1.SetData(relname);				// sysrel for "relname"
+		fldfld2.SetData(fldlst[i]->GetName());	// fieldname
+		fldfld3.SetData(fldlst[i]->GetType());	// fieldtype
+		fldfld4.SetData(fldlst[i]->GetLen());	// fieldlen
 		ItemBuild(str, NFLDSFLD, fldfldlst);
 		data.SetData(str);
 		ndxatr.WriteData(data, recno + i);
@@ -996,7 +988,7 @@ int	RTable::MakeRelation(RBtree* btree, const char *relname, RField *fldlst[]) {
 // 4. Make a RIndex for indexes in SYSNDX, string together in linked list
 //
 //	return -1 if relation can't be found
-int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
+int	RTable::OpenRelation(RBtree* btree, const char* relname) {
 	int		i, j;
 	int		count;
 	int		rc;
@@ -1008,7 +1000,6 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 	RField*	fld;
 	RIndex*	ndx;
 
-	relParent = dbf;
 	relNdx = btree;
 	i = strlen(relname);
 	relName = new char[i + 1];
@@ -1020,8 +1011,8 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		relnFlds = NFLDSREL;
 		relFldLst = fldrellst;
 		relRecNo = 0;
-		relDataNdx = new RIndex((relID)this, "sysrel", SYSREL, btree);
-		relCurNdx = new RIndex((relID)this, "sysrelx", SYSRELX, btree);
+		relDataNdx = new RIndex("sysrel", SYSREL, btree);
+		relCurNdx = new RIndex("sysrelx", SYSRELX, btree);
 		relCurNdx->AddField(*relFldLst[0], ASCENDING);  //160911
 		relDataNdx->SetLink(relCurNdx);
 		relNdxRoot = relDataNdx;
@@ -1033,8 +1024,8 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		relnFlds = NFLDSFLD;
 		relFldLst = fldfldlst;
 		relRecNo = 0;
-		relDataNdx = new RIndex((relID)this, "sysatr", SYSFLD, btree);
-		relCurNdx = new RIndex((relID)this, "sysatrx", SYSFLDX, btree);
+		relDataNdx = new RIndex("sysatr", SYSFLD, btree);
+		relCurNdx = new RIndex("sysatrx", SYSFLDX, btree);
 
 		relCurNdx->AddField(*relFldLst[0], ASCENDING);	//160911
 		relCurNdx->AddField(*relFldLst[1], ASCENDING);
@@ -1048,8 +1039,8 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		relnFlds = NFLDSNDX;
 		relFldLst = fldndxlst;
 		relRecNo = 0;
-		relDataNdx = new RIndex((relID)this, "sysndx", SYSNDX, btree);
-		relCurNdx = new RIndex((relID)this, "sysndxx", SYSNDXX, btree);
+		relDataNdx = new RIndex("sysndx", SYSNDX, btree);
+		relCurNdx = new RIndex("sysndxx", SYSNDXX, btree);
 		relCurNdx->AddField(*relFldLst[0], ASCENDING); //160911
 		relCurNdx->AddField(*relFldLst[1], ASCENDING);
 		relDataNdx->SetLink(relCurNdx);
@@ -1057,12 +1048,12 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		return 0;
 		}
 
-	RIndex	ndxrel((relID)this, "sysrel", SYSREL, btree);
-	RIndex	ndxrelx((relID)this, "sysrel", SYSRELX, btree);
-	RIndex	ndxatr((relID)this, "sysatr", SYSFLD, btree);
-	RIndex	ndxatrx((relID)this, "sysatr", SYSFLDX, btree);
-	RIndex	ndxndx((relID)this, "sysndx", SYSNDX, btree);
-	RIndex	ndxndxx((relID)this, "sysndx", SYSNDXX, btree);
+	RIndex	ndxrel("sysrel", SYSREL, btree);
+	RIndex	ndxrelx("sysrel", SYSRELX, btree);
+	RIndex	ndxatr("sysatr", SYSFLD, btree);
+	RIndex	ndxatrx("sysatr", SYSFLDX, btree);
+	RIndex	ndxndx("sysndx", SYSNDX, btree);
+	RIndex	ndxndxx("sysndx", SYSNDXX, btree);
 
 	// get this relation's record from SYSREL
 	keyw.MakeSearchKey("s", relName);
@@ -1083,7 +1074,6 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		return(-1);
 		}
 
-	// TBD - why not use relnFlds
 	recno = ndxrelx.GetRecno();
 	rc = ndxatr.Fetch(recno, fldfldlst);
 	for (count = 1; count < MAXNDX; count++) {				// count fields
@@ -1116,7 +1106,7 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		rc = ndxatrx.Next();
 		}
 
-	relDataNdx = new RIndex((relID)this, "data", relNdxNo, btree);
+	relDataNdx = new RIndex("data", relNdxNo, btree);
 	relRecNo = relDataNdx->GetLastRecNo();		// get highest data record address
 
 												// now build ndx list
@@ -1134,7 +1124,7 @@ int	RTable::OpenRelation(dbfID dbf, RBtree* btree, const char* relname) {
 		if (rc != 0)
 			break;
 		strcpy(ascdesc, fldndx4.GetCharPtr());
-		ndx = new RIndex((relID)this, fldndx2.GetCharPtr(), fldndx3.GetInt(), btree);
+		ndx = new RIndex(fldndx2.GetCharPtr(), fldndx3.GetInt(), btree);
 		// scan atrlst[] to get RField ptrs for ndxFld array
 		for (j = 0; j < MAXKEY; j++) {
 			if (strlen(fldndxlst[j + 3]->GetCharPtr()) == 0)

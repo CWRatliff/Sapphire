@@ -40,7 +40,7 @@ RDbf::RDbf(const char* dbfname) {
 	dbfLink = NULL;
 	dbfRelRoot = NULL;
 	dbfBtree = NULL;
-	dbfAvail = NULL;
+	dbfAvail = 0;
 	}
 //=============================================================================
 RDbf::~RDbf() {
@@ -207,7 +207,7 @@ RTable* RDbf::DbOpenTable(const char* relname) {
 			return (0);
 		}
 	rel = new RTable;
-	rc = rel->OpenRelation((dbfID)this, dbfBtree, relname);
+	rc = rel->OpenRelation(dbfBtree, relname);
 	if (rc < 0) {
 		delete rel;
 		return 0;
@@ -236,12 +236,14 @@ int RDbf::DbCloseTable(RTable* rel) {
 		return -1;
 	if (dbfRelRoot == rel)
 		dbfRelRoot = rel->GetLink();
-	for (xrel = dbfRelRoot; xrel; xrel = xrel->GetLink()) {
-		if (xrel->GetLink() == rel) {
-			xrel->SetLink(rel->GetLink());
-			break;
+	else {
+		for (xrel = dbfRelRoot; xrel; xrel = xrel->GetLink()) {
+			if (xrel->GetLink() == rel) {
+				xrel->SetLink(rel->GetLink());
+				break;
+				}
+			return (-1);
 			}
-		return (-1);
 		}
 	delete rel;
 	return 0;
