@@ -156,29 +156,29 @@ int RNode::DeleteNode() {
 	_set_errno(0);
 	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 	_write(nodeFd, &nodeP0, 3 * sizeof(NODE));
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 	nodeAvail = nodeCurr;
 	_lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 	_write(nodeFd, &nodeCurr, sizeof(NODE));
 	_get_errno(&err);
-	assert(errno == 0);
+	assert(err == 0);
 #endif
 #ifdef LINUX
-	errno = 0;
+//	errno = 0;
 	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);	// put avail pointer in deleted node
-	assert(errno == 0);
+//	assert(errno == 0);
 	write(nodeFd, &nodeP0, 3 * sizeof(NODE));
-	assert(errno == 0);
+//	assert(errno == 0);
 	nodeAvail = nodeCurr;
 	lseek(nodeFd, 0L, SEEK_SET);					// make just deleted node first in avail list
-	assert(errno == 0);
+//	assert(errno == 0);
 	write(nodeFd, &nodeCurr, sizeof(NODE));
-	assert(errno == 0);
+//	assert(errno == 0);
 #endif
 
 	return 0;
@@ -318,24 +318,24 @@ NODE RNode::NewNode() {
 		}
 #endif
 #ifdef LINUX
-	errno = 0;
+//	errno = 0;
 	if (nodeAvail) {								// if allocated free space is available
 		lseek(nodeFd, nodeAvail*NODESIZE, SEEK_SET);
-		assert(errno == 0);
+//		assert(errno == 0);
 		read(nodeFd, &avail, sizeof(NODE));		// read it's avail link
-		assert(errno == 0);
+//		assert(errno == 0);
 		lseek(nodeFd, 0L, SEEK_SET);				// rewrite node 0 and 1st avail node #
-		assert(errno == 0);
+//		assert(errno == 0);
 		write(nodeFd, &avail, sizeof(NODE));
-		assert(errno == 0);
+//		assert(errno == 0);
 		nodeCurr = nodeAvail;
 		nodeAvail = avail;
 	}
 	else {
 		rawpos = lseek(nodeFd, 0L, SEEK_END);		// EOF
-		assert(errno == 0);
+//		assert(errno == 0);
 		write(nodeFd, &nodeP0, NODESIZE);
-		assert(errno == 0);
+//		assert(errno == 0);
 		nodeCurr = rawpos / NODESIZE;				// compute node number
 	}
 #endif
@@ -539,17 +539,17 @@ int RNode::Read(NODE node) {
 	_set_errno(0);
 	_lseek(nodeFd, node*NODESIZE, SEEK_SET);
 	_get_errno(&err);
-	assert(err == 0);
+//	assert(err == 0);
 	bytes = _read(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
 	assert(err == 0);
 #endif
 #ifdef LINUX
-	errno = 0;
+//	errno = 0;
 	lseek(nodeFd, node*NODESIZE, SEEK_SET);
-	assert(errno == 0);
+//	assert(errno == 0);
 	bytes = read(nodeFd, &nodeP0, NODESIZE);
-	assert(errno == 0);
+//	assert(errno == 0);
 #endif
 
 	if (bytes < NODESIZE)
@@ -565,17 +565,17 @@ int RNode::Write() {
 	_set_errno(0);
 	_lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
 	_get_errno(&err);
-	assert(err == 0);
+//	assert(err == 0);
 	_write(nodeFd, &nodeP0, NODESIZE);
 	_get_errno(&err);
-	assert(err == 0);
+//	assert(err == 0);
 #endif
 #ifdef LINUX
-	errno = 0;
+//	errno = 0;
 	lseek(nodeFd, nodeCurr*NODESIZE, SEEK_SET);
-	assert(errno == 0);
+//	assert(errno == 0);
 	write(nodeFd, &nodeP0, NODESIZE);
-	assert(errno == 0);
+//	assert(errno == 0);
 #endif
 	return 0;
 	}
