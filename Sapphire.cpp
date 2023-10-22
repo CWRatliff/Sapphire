@@ -72,11 +72,12 @@ Sapphire::~Sapphire() {
 	RDbf*	dbf;
 	RDbf*	nxtdbf;
 
-	dbf = (RDbf*)dbDbfRoot;
-	for (; dbf; dbf = nxtdbf) {
-		nxtdbf = dbf->GetLink();
+	dbf = dbDbfRoot;
+//	for (; dbf; dbf = nxtdbf) {
+//		nxtdbf = dbf->GetLink();
+	if (dbf != NULL)
 		delete dbf;
-		}
+//		}
 	}
 //=============================================================================
 /*
@@ -117,7 +118,7 @@ RDbf* Sapphire::DbLogin(const char* dbfname) {
 
 	dbf = new RDbf(dbfname);
 	rc = dbf->Login(dbfname);
-	if (rc == 0) {
+	if (rc <= 0) {
 		delete dbf;
 		return 0;
 		}
@@ -197,13 +198,12 @@ RDbf*	Sapphire::DbCreateFile(const char *dbfname) {
 
 	dbf = new RDbf(dbfname);
 	rc = dbf->Create(dbfname);
-	if (rc == 0) {
+	if (rc <= 0) {
 		delete dbf;
 		return (NULL);
 		}
 	dbf->SetLink((RDbf*)dbDbfRoot);			// add to linked list of dbf's
 	dbDbfRoot = dbf;
-
 	return (dbf);
 	}
 
